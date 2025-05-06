@@ -1,0 +1,34 @@
+:root {
+  /* Colors */
+  --c-black: #000;
+  --c-white: #fff;
+
+  /* Fonts */
+  --ff-default: 'Nunito', Arial, Helvetica, sans-serif;
+  --ff-mono: 'Ubuntu Mono', 'Courier New', monospace;
+  --ff-title: 'Star Jedi', Arial, Helvetica, sans-serif;
+  --ff-title-alt: 'Star Jedi Hollow', Arial, Helvetica, sans-serif;
+
+  /* Rules */
+  background-color: var(--c-black);
+  color: var(--c-white);
+  font-family: var(--ff-default);
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  font-size: 100%;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  font-size: 1rem;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--ff-title);
+}

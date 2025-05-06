@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+  <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+  <title>pSWG Launcher</title>
+
+  <link rel="stylesheet" href="styles/reset.css">
+  <link rel="stylesheet" href="styles/fonts.css">
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/launcher.css">
+</head>
+
+<body>
+  <!-- Background -->
+  <div class="bg"></div>
+
+  <!-- Launcher -->
+  <main>
+    <div class="top">
+      <h1 class="DISPLAY_TITLE"></h1>
+    </div>
+    <div class="bottom">
+      <button id="install-dir"></button>
+    </div>
+  </main>
+
+  <!-- Modals -->
+  <div class="modal" id="info">
+    <div id="versions"></div>
+  </div>
+
+
+  <!-- JS -->
+  <script src="./renderer.js"></script>
+</body>
+
+</html>

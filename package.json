@@ -1,0 +1,20 @@
+{
+  "name": "pswg-launcher",
+  "version": "1.0.0",
+  "description": "The launcher for pswg",
+  "main": "main.js",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:pstrawberrie/pswg-launcher.git"
+  },
+  "author": "pstrawberrie",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^36.1.0"
+  }
+}

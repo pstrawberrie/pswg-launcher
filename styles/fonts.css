@@ -1,0 +1,50 @@
+/* Ubuntu Mono */
+@font-face {
+  font-family: 'Ubuntu Mono';
+  src: url('../assets/fonts/UbuntuMonoRegular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Ubuntu Mono';
+  src: url('../assets/fonts/UbuntuMonoBold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Nunito */
+@font-face {
+  font-family: 'Nunito';
+  src: url('../assets/fonts/NunitoRegular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('../assets/fonts/NunitoBold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Star Jedi */
+@font-face {
+  font-family: 'Star Jedi';
+  src: url('../assets/fonts/StarJedi.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Star Jedi Hollow';
+  src: url('../assets/fonts/StarJediHollow.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
