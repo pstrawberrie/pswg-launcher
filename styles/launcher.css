@@ -23,6 +23,7 @@ main {
 /* Modal */
 .modal {
   position: fixed;
+  display: none;
   top: 25px;
   left: 25px;
   width: calc(100% - 50px);
