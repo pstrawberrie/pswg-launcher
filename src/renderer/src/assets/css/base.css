@@ -1,0 +1,42 @@
+:root {
+  --c-white: #fff;
+  --c-black: #000;
+
+  --c-dark: #1a1a1a;
+  --c-dark-accent: #232323;
+
+  --ff-nunito: 'Nunito', Tahoma, Verdana, Arial, sans-serif;
+  --ff-stonecoldfox: 'KC Stone Cold Fox', Tahoma, Verdana, Arial, sans-serif;
+  --ff-monospace: monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+html {
+  font-size: 16px; /* don't do this at home */
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  line-height: 1.6;
+  font-family: var(--ff-nunito);
+  font-size: 100%;
+  color: var(--c-white);
+  background-color: var(--c-black);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* Util */
+.t { font-family: var(--ff-stonecoldfox); }
+.m { font-family: var(--ff-monospace); }

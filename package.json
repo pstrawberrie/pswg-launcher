@@ -6,7 +6,8 @@
   "scripts": {
     "format": "prettier --plugin prettier-plugin-svelte --write .",
     "lint": "eslint --cache .",
-    "start": "electron-vite preview",
+    "start": "electron-vite dev",
+    "preview": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "postinstall": "electron-builder install-app-deps",
