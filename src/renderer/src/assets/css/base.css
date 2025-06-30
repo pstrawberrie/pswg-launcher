@@ -4,6 +4,13 @@
 
   --c-dark: #1a1a1a;
   --c-dark-accent: #232323;
+  --c-light: #bbb;
+  --c-light-accent: #ccc;
+
+  --c-green: #80bc68;
+  --c-blue: #7dddfb;
+  --c-yellow: #ffe766;
+  --c-red: #ff3838;
 
   --ff-nunito: 'Nunito', Tahoma, Verdana, Arial, sans-serif;
   --ff-roboto: 'Roboto', Tahoma, Verdana, Arial, sans-serif;
@@ -20,8 +27,8 @@
 }
 
 html {
-  font-size: 16px;
   /* don't do this at home */
+  font-size: 16px;
 }
 
 body {
@@ -45,4 +52,20 @@ body {
 
 .m {
   font-family: var(--ff-monospace);
+}
+
+.success {
+  color: var(--c-green);
+}
+
+.blue {
+  color: var(--c-blue);
+}
+
+.yellow {
+  color: var(--c-yellow);
+}
+
+.error {
+  color: var(--c-red);
 }

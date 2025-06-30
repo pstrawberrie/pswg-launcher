@@ -1,17 +1,52 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, Tray, Menu, nativeImage, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import { readFileSync, writeFileSync } from 'node:fs'
 
+/* User Settings */
+const settingsPath = `${app.getPath('userData')}/settings.json`
+const defaultSettings = {
+  installDir: '',
+  minimizeToTray: true
+}
+
+function getSettings() {
+  try {
+    const settings = readFileSync(settingsPath, 'utf8')
+    return JSON.parse(settings)
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      writeFileSync(settingsPath, JSON.stringify(defaultSettings), 'utf8')
+
+      return defaultSettings
+    } else {
+      console.error('Error reading file in getSettings', err)
+      return null
+    }
+  }
+}
+
+function writeSettings(json) {
+  if (!json) {
+    console.error('No json passed into writeSettings')
+    return
+  }
+
+  try {
+    writeFileSync(settingsPath, JSON.stringify(json), 'utf8')
+  } catch (err) {
+    console.error('Error writing to file in getSettings', err)
+  }
+}
+
+/* Electron BrowserWindow */
 function createWindow() {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 576,
     show: false,
     resizable: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -27,49 +62,89 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  // Electron-vite HMR
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // Minimize to system tray
+  mainWindow.on('minimize', (event) => {
+    event.preventDefault()
+    mainWindow.hide()
+  })
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
-
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
-  createWindow()
-
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+/* Electron whenReady */
+app.whenReady().then(() => {
+  // Electron Boilerplate
+  electronApp.setAppUserModelId('com.electron')
+  app.on('browser-window-created', (_, window) => {
+    optimizer.watchWindowShortcuts(window)
+  })
+
+  // IPC Listeners
+  testIPC()
+  selectInstallDirIPC()
+  playGameIPC()
+
+  // Main Window
+  createWindow()
+
+  // Tray
+  setupTray()
+
+  // Testing
+  const settings = getSettings()
+  console.log(settings)
+})
+
+/* Set Up Tray */
+let tray
+function setupTray() {
+  const trayIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
+  tray = new Tray(trayIcon)
+
+  const trayMenu = Menu.buildFromTemplate([
+    { label: 'Quit', type: 'normal', click: () => app.quit() }
+  ])
+  tray.setContextMenu(trayMenu)
+  tray.on('click', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    win.isVisible() ? win.focus() : win.show()
+  })
+}
+
+/* IPC Functions */
+// Test IPC
+function testIPC() {
+  ipcMain.on('ping', () => console.log('pong'))
+}
+
+// Select Install Directory IPC
+function selectInstallDirIPC() {
+  const currentDir = getSettings().installDir
+  ipcMain.on('selectInstallDir', () => console.log(`install dir: ${currentDir}`))
+}
+
+// Play Game IPC
+function playGameIPC() {
+  ipcMain.on('playGame', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    // const shouldMinimize = store.get('minimizeToTray') === true
+    const shouldMinimize = true
+
+    if (win) {
+      shell.openPath('E:/psWG/SWGEmu.exe')
+      if (shouldMinimize) win.minimize()
+    }
+  })
+}
