@@ -6,7 +6,7 @@
   --c-dark-accent: #232323;
 
   --ff-nunito: 'Nunito', Tahoma, Verdana, Arial, sans-serif;
-  --ff-stonecoldfox: 'KC Stone Cold Fox', Tahoma, Verdana, Arial, sans-serif;
+  --ff-roboto: 'Roboto', Tahoma, Verdana, Arial, sans-serif;
   --ff-monospace: monospace;
 }
 
@@ -20,7 +20,8 @@
 }
 
 html {
-  font-size: 16px; /* don't do this at home */
+  font-size: 16px;
+  /* don't do this at home */
 }
 
 body {
@@ -38,5 +39,10 @@ body {
 }
 
 /* Util */
-.t { font-family: var(--ff-stonecoldfox); }
-.m { font-family: var(--ff-monospace); }
+.t {
+  font-family: var(--ff-roboto);
+}
+
+.m {
+  font-family: var(--ff-monospace);
+}
