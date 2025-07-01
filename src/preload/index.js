@@ -3,7 +3,10 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
-  sendInstallDir: (dir) => ipcRenderer.send('installDir', dir)
+  getSettings: () => ipcRenderer.invoke('getSettings'),
+  selectInstallDir: (dir) => ipcRenderer.invoke('dialog:selectInstallDir', dir),
+  setMinimizeToTray: (isChecked) => ipcRenderer.send('setMinimizeToTray', isChecked),
+  setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

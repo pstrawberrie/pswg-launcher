@@ -1,42 +1,28 @@
-import { app, Tray, Menu, nativeImage, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, Tray, Menu, nativeImage, shell, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { getSettings, writeSettings } from '../settings.js'
 
-/* User Settings */
 const settingsPath = `${app.getPath('userData')}/settings.json`
-const defaultSettings = {
-  installDir: '',
-  minimizeToTray: true
+
+/* Handle Get Settings */
+function handleGetSettings() {
+  const settings = getSettings(settingsPath)
+  return settings
 }
 
-function getSettings() {
-  try {
-    const settings = readFileSync(settingsPath, 'utf8')
-    return JSON.parse(settings)
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      writeFileSync(settingsPath, JSON.stringify(defaultSettings), 'utf8')
-
-      return defaultSettings
-    } else {
-      console.error('Error reading file in getSettings', err)
-      return null
-    }
-  }
-}
-
-function writeSettings(json) {
-  if (!json) {
-    console.error('No json passed into writeSettings')
-    return
+/* Handle Select Install Dir */
+async function handleSelectInstallDir() {
+  const settings = getSettings(settingsPath)
+  const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+  if (!canceled) {
+    console.log(`install dir selected: ${filePaths[0]}`)
+    writeSettings(settingsPath, { ...settings, installDir: filePaths[0] })
+    return filePaths[0]
   }
 
-  try {
-    writeFileSync(settingsPath, JSON.stringify(json), 'utf8')
-  } catch (err) {
-    console.error('Error writing to file in getSettings', err)
-  }
+  console.log('dir selection canceled')
+  return null // return null if canceled
 }
 
 /* Electron BrowserWindow */
@@ -71,16 +57,17 @@ function createWindow() {
 
   // Minimize to system tray
   mainWindow.on('minimize', (event) => {
+    const settings = getSettings(settingsPath)
     event.preventDefault()
-    mainWindow.hide()
+    if (settings.minimizeToTray) {
+      mainWindow.hide()
+    }
   })
 }
 
 // Quit when all windows are closed
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  app.quit()
 })
 
 /* Electron whenReady */
@@ -91,9 +78,11 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC Listeners
-  testIPC()
+  // IPC
+  getSettingsIPC()
   selectInstallDirIPC()
+  setMinimizeToTrayIPC()
+  setMinimizeOnPlayIPC()
   playGameIPC()
 
   // Main Window
@@ -103,7 +92,7 @@ app.whenReady().then(() => {
   setupTray()
 
   // Testing
-  const settings = getSettings()
+  const settings = getSettings(settingsPath)
   console.log(settings)
 })
 
@@ -124,27 +113,41 @@ function setupTray() {
 }
 
 /* IPC Functions */
-// Test IPC
-function testIPC() {
-  ipcMain.on('ping', () => console.log('pong'))
+// Get Settings IPC
+function getSettingsIPC() {
+  ipcMain.handle('getSettings', handleGetSettings)
 }
 
 // Select Install Directory IPC
 function selectInstallDirIPC() {
-  const currentDir = getSettings().installDir
-  ipcMain.on('selectInstallDir', () => console.log(`install dir: ${currentDir}`))
+  ipcMain.handle('dialog:selectInstallDir', handleSelectInstallDir)
+}
+
+// Set Minimized To Tray IPC
+function setMinimizeToTrayIPC() {
+  ipcMain.on('setMinimizeToTray', (event, isChecked) => {
+    const settings = getSettings(settingsPath)
+    writeSettings(settingsPath, { ...settings, minimizeToTray: isChecked })
+  })
+}
+
+// Set Minimized On Play IPC
+function setMinimizeOnPlayIPC() {
+  ipcMain.on('setMinimizeOnPlay', (event, isChecked) => {
+    const settings = getSettings(settingsPath)
+    writeSettings(settingsPath, { ...settings, minimizeOnPlay: isChecked })
+  })
 }
 
 // Play Game IPC
 function playGameIPC() {
   ipcMain.on('playGame', () => {
+    const settings = getSettings(settingsPath)
     const win = BrowserWindow.getAllWindows()[0]
-    // const shouldMinimize = store.get('minimizeToTray') === true
-    const shouldMinimize = true
 
     if (win) {
       shell.openPath('E:/psWG/SWGEmu.exe')
-      if (shouldMinimize) win.minimize()
+      if (settings.minimizeOnPlay) win.minimize()
     }
   })
 }
