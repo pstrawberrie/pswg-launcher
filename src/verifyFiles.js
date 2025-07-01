@@ -40,15 +40,15 @@ export async function verifyFiles(installDir) {
       await new Promise((resolve, reject) => {
         stream.on('end', () => {
           const fileHash = hash.digest('hex')
-          // if (fileHash === file.fileHash) {
-          verifiedCount++
-          console.log(
-            `${getPercentComplete()}% (${verifiedCount}/${totalFiles}) hash for ${file.filePath}: ${fileHash}`
-          )
-          resolve()
-          // } else {
-          //   reject(`Hash does not match for ${file.filePath}`)
-          // }
+          if (fileHash === file.fileHash) {
+            verifiedCount++
+            console.log(
+              `${getPercentComplete()}% (${verifiedCount}/${totalFiles}) hash for ${file.filePath}: ${fileHash}`
+            )
+            resolve()
+          } else {
+            reject(`Hash does not match for ${file.filePath}`)
+          }
         })
 
         stream.on('error', (err) => {
