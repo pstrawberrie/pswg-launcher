@@ -15,6 +15,7 @@
   --ff-nunito: 'Nunito', Tahoma, Verdana, Arial, sans-serif;
   --ff-roboto: 'Roboto', Tahoma, Verdana, Arial, sans-serif;
   --ff-monospace: monospace;
+  --ff-typicons: 'typicons';
 }
 
 *,
@@ -47,14 +48,6 @@ body {
 }
 
 /* Util */
-.t {
-  font-family: var(--ff-roboto);
-}
-
-.m {
-  font-family: var(--ff-monospace);
-}
-
 .success {
   color: var(--c-green);
 }

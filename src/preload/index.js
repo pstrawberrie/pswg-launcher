@@ -3,11 +3,18 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
-  getSettings: () => ipcRenderer.invoke('getSettings'),
+  // dialogs
   selectInstallDir: (dir) => ipcRenderer.invoke('dialog:selectInstallDir', dir),
+  confirmEmptyDirInstall: (dir) => ipcRenderer.invoke('dialog:confirmEmptyDirInstall', dir),
+
+  // settings
+  getSettings: () => ipcRenderer.invoke('getSettings'),
   setMinimizeToTray: (isChecked) => ipcRenderer.send('setMinimizeToTray', isChecked),
   setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked),
   setDisableVideo: (isChecked) => ipcRenderer.send('setDisableVideo', isChecked),
+
+  // events
+  onSettingsEvent: (callback) => ipcRenderer.on('settings', (_event, value) => callback(value)),
   onTaskEvent: (callback) => ipcRenderer.on('task', (_event, value) => callback(value))
 }
 

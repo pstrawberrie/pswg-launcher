@@ -5,37 +5,6 @@ import { getSettings, writeSettings } from '../settings.js'
 
 const settingsPath = `${app.getPath('userData')}/settings.json`
 
-/* Handle Get Settings */
-function handleGetSettings() {
-  const settings = getSettings(settingsPath)
-  return settings
-}
-
-/* Handle Select Install Dir */
-async function handleSelectInstallDir() {
-  const settings = getSettings(settingsPath)
-  const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
-  if (!canceled) {
-    console.log(`install dir selected: ${filePaths[0]}`)
-    writeSettings(settingsPath, { ...settings, installDir: filePaths[0] })
-    return filePaths[0]
-  }
-
-  console.log('dir selection canceled')
-  return settings.installDir // return current value if cancelled
-}
-
-/* Handle Send Task */
-function sendTaskEvent(taskData) {
-  const win = BrowserWindow.getAllWindows()[0]
-
-  if (win) {
-    win.webContents.send('task', taskData)
-  } else {
-    console.log('no window found for sendTask!')
-  }
-}
-
 /* Electron BrowserWindow */
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -67,9 +36,10 @@ function createWindow() {
   }
 
   // Minimize to system tray
-  mainWindow.on('minimize', (event) => {
-    const settings = getSettings(settingsPath)
+  mainWindow.on('minimize', async (event) => {
     event.preventDefault()
+    const settings = await getSettings(settingsPath)
+
     if (settings.minimizeToTray) {
       mainWindow.hide()
     }
@@ -104,37 +74,10 @@ app.whenReady().then(() => {
   setupTray()
 
   // Testing
-  const settings = getSettings(settingsPath)
-  console.log(settings)
-
   // sendTaskEvent({ message: 'Testing task event', progress: 19 })
   // sendTaskEvent({ fileVerificationError: true })
   // sendTaskEvent({ fileDownloadError: true })
   // sendTaskEvent({ ready: true })
-
-  setTimeout(() => {
-    sendTaskEvent({ message: 'Testing task event', progress: 19 })
-
-    setTimeout(() => {
-      sendTaskEvent({ message: 'Still testing...', progress: 69 })
-
-      setTimeout(() => {
-        sendTaskEvent({ message: 'Finished testing', progress: 100 })
-
-        setTimeout(() => {
-          sendTaskEvent({ fileVerificationError: true })
-
-          setTimeout(() => {
-            sendTaskEvent({ fileDownloadError: true })
-
-            setTimeout(() => {
-              sendTaskEvent({ ready: true })
-            }, 1500)
-          }, 1500)
-        }, 1500)
-      }, 600)
-    }, 800)
-  }, 3000)
 })
 
 /* Set Up Tray */
@@ -153,7 +96,55 @@ function setupTray() {
   })
 }
 
-/* IPC Functions */
+/**
+ * IPC Handlers
+ */
+/* Handle Get Settings */
+async function handleGetSettings() {
+  const settings = await getSettings(settingsPath)
+  return settings
+}
+
+/* Handle Send Settings */
+async function sendSettings() {
+  const win = BrowserWindow.getAllWindows()[0]
+  const settings = await getSettings(settingsPath)
+
+  if (win && settings) {
+    win.webContents.send('settings', settings)
+  } else {
+    console.error(`Error sending settings: win: ${win} / settings: ${settings}`)
+  }
+}
+
+/* Handle Send Task */
+function sendTaskEvent(taskData) {
+  const win = BrowserWindow.getAllWindows()[0]
+
+  if (win) {
+    win.webContents.send('task', taskData)
+  } else {
+    console.error('no window found for sendTask!')
+  }
+}
+
+/* Handle Select Install Dir */
+async function handleSelectInstallDir() {
+  const settings = await getSettings(settingsPath)
+  const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+  if (!canceled) {
+    console.log(`install dir selected: ${filePaths[0]}`)
+    writeSettings(settingsPath, { ...settings, installDir: filePaths[0] })
+    return filePaths[0]
+  }
+
+  // console.log('dir selection canceled')
+  return settings.installDir // return current value if cancelled
+}
+
+/**
+ * IPC Functions
+ */
 // Get Settings IPC
 function getSettingsIPC() {
   ipcMain.handle('getSettings', handleGetSettings)
@@ -166,32 +157,32 @@ function selectInstallDirIPC() {
 
 // Set Minimized To Tray IPC
 function setMinimizeToTrayIPC() {
-  ipcMain.on('setMinimizeToTray', (event, isChecked) => {
-    const settings = getSettings(settingsPath)
+  ipcMain.on('setMinimizeToTray', async (event, isChecked) => {
+    const settings = await getSettings(settingsPath)
     writeSettings(settingsPath, { ...settings, minimizeToTray: isChecked })
   })
 }
 
 // Set Minimized On Play IPC
 function setMinimizeOnPlayIPC() {
-  ipcMain.on('setMinimizeOnPlay', (event, isChecked) => {
-    const settings = getSettings(settingsPath)
+  ipcMain.on('setMinimizeOnPlay', async (event, isChecked) => {
+    const settings = await getSettings(settingsPath)
     writeSettings(settingsPath, { ...settings, minimizeOnPlay: isChecked })
   })
 }
 
 // Set Disable Video IPC
 function setDisableVideoIPC() {
-  ipcMain.on('setDisableVideo', (event, isChecked) => {
-    const settings = getSettings(settingsPath)
+  ipcMain.on('setDisableVideo', async (event, isChecked) => {
+    const settings = await getSettings(settingsPath)
     writeSettings(settingsPath, { ...settings, disableVideo: isChecked })
   })
 }
 
 // Play Game IPC
 function playGameIPC() {
-  ipcMain.on('playGame', () => {
-    const settings = getSettings(settingsPath)
+  ipcMain.on('playGame', async () => {
+    const settings = await getSettings(settingsPath)
     const win = BrowserWindow.getAllWindows()[0]
 
     if (win) {

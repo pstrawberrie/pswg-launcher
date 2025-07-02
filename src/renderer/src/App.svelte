@@ -7,7 +7,13 @@
     starting: 'Starting Checks...',
     fileVerificationError: 'Error verifying files',
     fileDownloadError: 'Error downloading files',
-    selectInstallDir: 'Select your client folder to continue',
+    selectInstallDir: 'Select client folder to continue',
+    confirmEmptyInstallDir: (dir) =>
+      `The selected directory ${dir} is empty - all client files will be downloaded. Proceed?`,
+    confirmExistingDir: (dir) =>
+      `There are already files in ${dir} - do you want to install pSWG here? Existing SWG files will be overwritten - this could possibly break a different server's client. You can decline and install the pSWG client in a new empty folder if you're unsure.`,
+    confirmFileRepair: (dir, numFiles) =>
+      `${numFiles} invalid files found in ${dir} - do you want to download new copies? This may break client mods if you have them. You can decline and install the pSWG client in a new empty folder if you're unsure.`,
     readyToPlay: 'Ready'
   }
 
@@ -42,7 +48,7 @@
   }
 
   // Renderer IPC
-  const ipcGetSettings = () => window.api.getSettings()
+  const ipcGetSettings = async () => await window.api.getSettings()
   const ipcSelectInstallDir = async () => (installDir = await window.api.selectInstallDir())
   const ipcSetMinimizeToTray = async (isChecked) => await window.api.setMinimizeToTray(isChecked)
   const ipcSetMinimizeOnPlay = async (isChecked) => await window.api.setMinimizeOnPlay(isChecked)
@@ -62,6 +68,15 @@
   function onDisableVideoChange(e) {
     ipcSetDisableVideo(e.target.checked)
     disableVideo = e.target.checked // client-side also needs to immediately update
+  }
+
+  function handleGetSettings(settings) {
+    console.log(settings)
+
+    installDir = settings.installDir
+    minimizeToTray = settings.minimizeToTray
+    minimizeOnPlay = settings.minimizeOnPlay
+    disableVideo = settings.disableVideo
   }
 
   function handleTaskEvent(taskData) {
@@ -85,14 +100,18 @@
     }
   }
 
+  function handleEmptyDirDialog() {}
+
+  // function handleNonEmptyDirDialog() {
+
+  // }
+
   // On Mount
   $effect(async () => {
     const settings = await ipcGetSettings()
-    installDir = settings.installDir
-    minimizeToTray = settings.minimizeToTray
-    minimizeOnPlay = settings.minimizeOnPlay
-    disableVideo = settings.disableVideo
+    handleGetSettings(settings)
 
+    window.api.onSettingsEvent((value) => handleGetSettings(value))
     window.api.onTaskEvent((value) => handleTaskEvent(value))
 
     // check for empty installDir
@@ -124,9 +143,9 @@
 />
 
 <div class="status">
-  <div><span class="i i-power success"></span> Server Online</div>
+  <div><span class="i i-power-outline success"></span> Server Status: Online</div>
   <div><span class="i i-group blue"></span> 69 Characters Logged In</div>
-  <div><span class="i i-chart-line yellow"></span> Uptime: 28d 15h</div>
+  <div><span class="i i-chart-line yellow"></span> Server Uptime: 28d 15h</div>
 </div>
 
 <button
@@ -167,23 +186,32 @@
       checked={disableVideo}
       onchange={onDisableVideoChange}
     />
-    <label for="disableVideo">Disable Background Animation</label>
+    <label for="disableVideo">Disable Background</label>
   </div>
 </div>
 
 <div class="container">
   <img alt="logo" class="logo" src={Logo} width="517" />
-  <button
-    class="play t"
-    disabled={!readyToPlay}
-    onclick={() => {
-      ipcPlay()
-    }}>play</button
-  >
+  {#if installDir === ''}
+    <button class="action select-install-dir" onclick={ipcSelectInstallDir}>
+      <i class="i-folder"></i> Select Client Folder
+      <span>If an empty folder is selected, all client files will be downloaded</span>
+      <span>The Recommended install location is in a new folder inside of your "Documents"</span>
+    </button>
+  {/if}
+  {#if installDir !== ''}
+    <button
+      class="action play"
+      disabled={!readyToPlay}
+      onclick={() => {
+        ipcPlay()
+      }}>play</button
+    >
+  {/if}
 </div>
 
-<div class="bottom-menu">
-  <button class={['install-dir']} onclick={ipcSelectInstallDir}
+<div class={['bottom-menu', installDir === '' ? 'hide-button' : '']}>
+  <button class="install-dir" onclick={ipcSelectInstallDir}
     ><span class="i i-folder"></span>{installDir === ''
       ? 'Select Client Folder'
       : installDir}</button
