@@ -22,7 +22,18 @@ async function handleSelectInstallDir() {
   }
 
   console.log('dir selection canceled')
-  return null // return null if canceled
+  return settings.installDir // return current value if cancelled
+}
+
+/* Handle Send Task */
+function sendTaskEvent(taskData) {
+  const win = BrowserWindow.getAllWindows()[0]
+
+  if (win) {
+    win.webContents.send('task', taskData)
+  } else {
+    console.log('no window found for sendTask!')
+  }
 }
 
 /* Electron BrowserWindow */
@@ -83,6 +94,7 @@ app.whenReady().then(() => {
   selectInstallDirIPC()
   setMinimizeToTrayIPC()
   setMinimizeOnPlayIPC()
+  setDisableVideoIPC()
   playGameIPC()
 
   // Main Window
@@ -94,6 +106,35 @@ app.whenReady().then(() => {
   // Testing
   const settings = getSettings(settingsPath)
   console.log(settings)
+
+  // sendTaskEvent({ message: 'Testing task event', progress: 19 })
+  // sendTaskEvent({ fileVerificationError: true })
+  // sendTaskEvent({ fileDownloadError: true })
+  // sendTaskEvent({ ready: true })
+
+  setTimeout(() => {
+    sendTaskEvent({ message: 'Testing task event', progress: 19 })
+
+    setTimeout(() => {
+      sendTaskEvent({ message: 'Still testing...', progress: 69 })
+
+      setTimeout(() => {
+        sendTaskEvent({ message: 'Finished testing', progress: 100 })
+
+        setTimeout(() => {
+          sendTaskEvent({ fileVerificationError: true })
+
+          setTimeout(() => {
+            sendTaskEvent({ fileDownloadError: true })
+
+            setTimeout(() => {
+              sendTaskEvent({ ready: true })
+            }, 1500)
+          }, 1500)
+        }, 1500)
+      }, 600)
+    }, 800)
+  }, 3000)
 })
 
 /* Set Up Tray */
@@ -136,6 +177,14 @@ function setMinimizeOnPlayIPC() {
   ipcMain.on('setMinimizeOnPlay', (event, isChecked) => {
     const settings = getSettings(settingsPath)
     writeSettings(settingsPath, { ...settings, minimizeOnPlay: isChecked })
+  })
+}
+
+// Set Disable Video IPC
+function setDisableVideoIPC() {
+  ipcMain.on('setDisableVideo', (event, isChecked) => {
+    const settings = getSettings(settingsPath)
+    writeSettings(settingsPath, { ...settings, disableVideo: isChecked })
   })
 }
 

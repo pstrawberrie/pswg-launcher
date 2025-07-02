@@ -3,8 +3,9 @@ import { readFileSync, writeFileSync } from 'node:fs'
 /* User Settings */
 const defaultSettings = {
   installDir: '',
+  minimizeToTray: true,
   minimizeOnPlay: true,
-  minimizeToTray: true
+  disableVideo: false
 }
 
 export function getSettings(settingsPath) {

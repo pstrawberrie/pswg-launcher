@@ -10,7 +10,7 @@
   --c-green: #80bc68;
   --c-blue: #7dddfb;
   --c-yellow: #ffe766;
-  --c-red: #ff3838;
+  --c-red: #ee6c6c;
 
   --ff-nunito: 'Nunito', Tahoma, Verdana, Arial, sans-serif;
   --ff-roboto: 'Roboto', Tahoma, Verdana, Arial, sans-serif;
@@ -67,6 +67,6 @@ body {
   color: var(--c-yellow);
 }
 
-.error {
+.red {
   color: var(--c-red);
 }

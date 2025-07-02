@@ -6,7 +6,9 @@ const api = {
   getSettings: () => ipcRenderer.invoke('getSettings'),
   selectInstallDir: (dir) => ipcRenderer.invoke('dialog:selectInstallDir', dir),
   setMinimizeToTray: (isChecked) => ipcRenderer.send('setMinimizeToTray', isChecked),
-  setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked)
+  setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked),
+  setDisableVideo: (isChecked) => ipcRenderer.send('setDisableVideo', isChecked),
+  onTaskEvent: (callback) => ipcRenderer.on('task', (_event, value) => callback(value))
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
