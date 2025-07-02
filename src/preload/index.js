@@ -6,6 +6,8 @@ const api = {
   // dialogs
   selectInstallDir: (dir) => ipcRenderer.invoke('dialog:selectInstallDir', dir),
   confirmEmptyDirInstall: (dir) => ipcRenderer.invoke('dialog:confirmEmptyDirInstall', dir),
+  confirmExistingDirInstall: (dir) => ipcRenderer.invoke('dialog:confirmExistingDirInstall', dir),
+  confirmFileRepair: (dir) => ipcRenderer.invoke('dialog:confirmFileRepair', dir),
 
   // settings
   getSettings: () => ipcRenderer.invoke('getSettings'),

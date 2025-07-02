@@ -9,7 +9,7 @@
     fileDownloadError: 'Error downloading files',
     selectInstallDir: 'Select client folder to continue',
     confirmEmptyInstallDir: (dir) =>
-      `The selected directory ${dir} is empty - all client files will be downloaded. Proceed?`,
+      `The selected directory ${dir} is empty - all client files will be downloaded. This will take about 3Gb of hard drive space. Proceed?`,
     confirmExistingDir: (dir) =>
       `There are already files in ${dir} - do you want to install pSWG here? Existing SWG files will be overwritten - this could possibly break a different server's client. You can decline and install the pSWG client in a new empty folder if you're unsure.`,
     confirmFileRepair: (dir, numFiles) =>
