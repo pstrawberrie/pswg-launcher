@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getSettings, writeSettings } from '../settings.js'
 import { dialogMessages } from '../strings.js'
-import { isInstallDirEmpty } from '../verifyFiles.js'
+import { isInstallDirEmpty, makeDirectories, verifyFiles } from '../verifyFiles.js'
 
 const settingsPath = `${app.getPath('userData')}/settings.json`
 
@@ -64,6 +64,7 @@ app.whenReady().then(() => {
   // IPC
   getSettingsIPC()
   selectInstallDirIPC()
+  handleVerifyClientIPC()
 
   setMinimizeToTrayIPC()
   setMinimizeOnPlayIPC()
@@ -212,6 +213,49 @@ function sendTaskEvent(taskData) {
   } else {
     console.error('no window found for sendTask!')
   }
+}
+
+/* Verify Client */
+function handleVerifyClientIPC() {
+  ipcMain.on('verifyClient', async () => {
+    const settings = await getSettings(settingsPath)
+    const win = BrowserWindow.getAllWindows()[0]
+
+    try {
+      const isEmpty = await isInstallDirEmpty(settings.installDir)
+      if (isEmpty) {
+        const makeDirs = await makeDirectories(settings.installDir, sendTaskEvent)
+        if (makeDirs.success) {
+          // handle makedirs success
+          console.log('makedirs success!')
+
+          if (win) {
+            // do downloads here
+            console.log('do downloads here')
+          }
+        } else {
+          // handle makedirs error
+          console.log('makedirs error =[')
+        }
+      } else {
+        // verify here
+        console.log('directory not empty - starting verification')
+        const verificationResults = await verifyFiles(settings.installDir, sendTaskEvent)
+
+        console.log('--- Verification results ---')
+        console.log(verificationResults)
+        const { totalFiles, verifiedFiles, missingFiles, badHashFiles } = verificationResults
+
+        if (missingFiles || badHashFiles) {
+          // ask user if they want to repair files
+          const totalToRepair = missingFiles.length + badHashFiles.length
+          sendTaskEvent({ message: `${totalToRepair}/${totalFiles} files need to be repaired` })
+        }
+      }
+    } catch (err) {
+      console.error('Error in handleVerifyClientIPC', err)
+    }
+  })
 }
 
 /**

@@ -1,5 +1,6 @@
 export const taskMessages = {
   starting: 'Starting Checks...',
+  directoryCreationError: 'Error creating directories',
   fileVerificationError: 'Error verifying files',
   fileDownloadError: 'Error downloading files',
   selectInstallDir: 'Select client folder to continue',

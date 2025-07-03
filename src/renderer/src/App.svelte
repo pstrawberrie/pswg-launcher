@@ -23,6 +23,7 @@
 
   // Play state
   let readyToPlay = $state(false)
+  let makeDirectoriesError = $state(false)
   let fileVerificationError = $state(false)
   let fileDownloadError = $state(false)
   let noInstallDir = $derived(installDir === '')
@@ -36,11 +37,16 @@
 
   // Renderer IPC
   const ipcGetSettings = async () => await window.api.getSettings()
-  const ipcSelectInstallDir = async () => (installDir = await window.api.selectInstallDir())
+  const ipcSelectInstallDir = async () => {
+    installDir = await window.api.selectInstallDir()
+    console.log('got install dir, now we can kickoff the verification!')
+    ipcVerifyClient()
+  }
   const ipcSetMinimizeToTray = async (isChecked) => await window.api.setMinimizeToTray(isChecked)
   const ipcSetMinimizeOnPlay = async (isChecked) => await window.api.setMinimizeOnPlay(isChecked)
   const ipcSetDisableVideo = async (isChecked) => await window.api.setDisableVideo(isChecked)
 
+  const ipcVerifyClient = () => window.electron.ipcRenderer.send('verifyClient')
   const ipcPlay = () => window.electron.ipcRenderer.send('playGame')
 
   // IPC Functions
@@ -71,6 +77,11 @@
 
     if (taskData.ready) {
       setReadyToPlay()
+    } else if (taskData.makeDirectoriesError) {
+      makeDirectoriesError = true
+      taskError = true
+      taskMessage = taskMessages.makeDirectoriesError
+      taskProgress = 100
     } else if (taskData.fileDownloadError) {
       fileDownloadError = true
       taskError = true
@@ -87,12 +98,6 @@
     }
   }
 
-  function handleEmptyDirDialog() {}
-
-  // function handleNonEmptyDirDialog() {
-
-  // }
-
   // On Mount
   $effect(async () => {
     const settings = await ipcGetSettings()
@@ -102,9 +107,11 @@
     window.api.onTaskEvent((value) => handleTaskEvent(value))
 
     // check for empty installDir
-    if (installDir === '') {
+    if (noInstallDir) {
       readyToPlay = false
       taskMessage = taskMessages.selectInstallDir
+    } else {
+      ipcVerifyClient()
     }
   })
 </script>
@@ -179,29 +186,21 @@
 
 <div class="container">
   <img alt="logo" class="logo" src={Logo} width="517" />
-  {#if installDir === ''}
+  {#if noInstallDir}
     <button class="action select-install-dir" onclick={ipcSelectInstallDir}>
       <i class="i-folder"></i> Select Client Folder
       <span>If an empty folder is selected, all client files will be downloaded</span>
       <span>The Recommended install location is in a new folder inside of your "Documents"</span>
     </button>
   {/if}
-  {#if installDir !== ''}
-    <button
-      class="action play"
-      disabled={!readyToPlay}
-      onclick={() => {
-        ipcPlay()
-      }}>play</button
-    >
+  {#if !noInstallDir}
+    <button class="action play" disabled={!readyToPlay} onclick={ipcPlay}>play</button>
   {/if}
 </div>
 
-<div class={['bottom-menu', installDir === '' ? 'hide-button' : '']}>
+<div class={['bottom-menu', noInstallDir ? 'hide-button' : '']}>
   <button class="install-dir" onclick={ipcSelectInstallDir}
-    ><span class="i i-folder"></span>{installDir === ''
-      ? 'Select Client Folder'
-      : installDir}</button
+    ><span class="i i-folder"></span>{noInstallDir ? 'Select Client Folder' : installDir}</button
   >
   <div class={['task', taskError ? 'error' : '', readyToPlay ? 'ready' : '']}>
     <div class="message">{taskMessage}</div>

@@ -5,10 +5,6 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   // dialogs
   selectInstallDir: (dir) => ipcRenderer.invoke('dialog:selectInstallDir', dir),
-  // confirmEmptyDirInstall: (choice) => ipcRenderer.invoke('dialog:confirmEmptyDirInstall', choice),
-  // confirmExistingDirInstall: (choice) =>
-  //   ipcRenderer.invoke('dialog:confirmExistingDirInstall', choice),
-  // confirmFileRepair: (choice) => ipcRenderer.invoke('dialog:confirmFileRepair', choice),
 
   // settings
   getSettings: () => ipcRenderer.invoke('getSettings'),

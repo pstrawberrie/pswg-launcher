@@ -3,6 +3,11 @@ import { createReadStream, readdirSync, mkdirSync } from 'node:fs'
 import crypto from 'node:crypto'
 import { directoryList, fileList } from './files.js'
 
+// Get Percent Complete Util
+function getPercentComplete(count, total) {
+  return Math.floor((count / total) * 100)
+}
+
 // Check if chosen install directory is empty
 export const isInstallDirEmpty = (installDir) =>
   new Promise((resolve, reject) => {
@@ -17,7 +22,7 @@ export const isInstallDirEmpty = (installDir) =>
 
 // Make directories for files before downloading them
 // - this will not error out if the directories already exist, so we will run it every time we need to download
-export const makeDirectories = (installDir) =>
+export const makeDirectories = (installDir, eventEmitter) =>
   new Promise((resolve, reject) => {
     let totalDirs = directoryList.length
     let created = 0
@@ -29,25 +34,27 @@ export const makeDirectories = (installDir) =>
         mkdirSync(dirPath, { recursive: true })
         created++
         console.log(`(${created}/${totalDirs}) created ${dirPath}`)
-        resolve({ success: true })
+        eventEmitter({
+          message: `${created}/${totalDirs} directories created`,
+          progress: getPercentComplete(created, totalDirs)
+        })
+
+        if (created === totalDirs) resolve({ success: true })
       } catch (err) {
         console.error(`Error creating directory: ${dirPath}`, err)
+        eventEmitter({ makeDirectoriesError: true })
         reject(err)
       }
     }
   })
 
 // Verify files and return an object containing verified files, missing files, and mismatched hash files
-export async function verifyFiles(installDir) {
+export async function verifyFiles(installDir, eventEmitter) {
   const totalFiles = fileList.length
   const verifiedFiles = []
   const missingFiles = []
   const badHashFiles = []
   let processedCount = 0
-
-  function getPercentComplete() {
-    return Math.floor((processedCount / totalFiles) * 100)
-  }
 
   for (let i = 0; i < totalFiles; i++) {
     const file = fileList[i]
@@ -75,6 +82,10 @@ export async function verifyFiles(installDir) {
 
           processedCount++
           console.log(`${getPercentComplete()}% (${processedCount}/${totalFiles})`)
+          eventEmitter({
+            message: `${processedCount}/${totalFiles} files verified`,
+            progress: getPercentComplete(processedCount, totalFiles)
+          })
           resolve()
         })
 
@@ -84,6 +95,11 @@ export async function verifyFiles(installDir) {
             missingFiles.push(file)
 
             processedCount++
+
+            eventEmitter({
+              message: `${processedCount}/${totalFiles} files verified`,
+              progress: getPercentComplete(processedCount, totalFiles)
+            })
             resolve()
           } else {
             console.error(`Error processing file: ${file.filePath}`, err)
@@ -96,8 +112,10 @@ export async function verifyFiles(installDir) {
     }
 
     console.log(`${processedCount}/${totalFiles}`)
-    if (processedCount === totalFiles)
+    if (processedCount === totalFiles) {
+      eventEmitter({ success: true })
       return { totalFiles, verifiedFiles, missingFiles, badHashFiles }
+    }
   }
 }
 
