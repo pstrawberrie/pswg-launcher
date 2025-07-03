@@ -2,6 +2,8 @@ import { app, Tray, Menu, nativeImage, shell, BrowserWindow, dialog, ipcMain } f
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getSettings, writeSettings } from '../settings.js'
+import { dialogMessages } from '../strings.js'
+import { isInstallDirEmpty } from '../verifyFiles.js'
 
 const settingsPath = `${app.getPath('userData')}/settings.json`
 
@@ -62,9 +64,11 @@ app.whenReady().then(() => {
   // IPC
   getSettingsIPC()
   selectInstallDirIPC()
+
   setMinimizeToTrayIPC()
   setMinimizeOnPlayIPC()
   setDisableVideoIPC()
+
   playGameIPC()
 
   // Main Window
@@ -117,7 +121,89 @@ async function sendSettings() {
   }
 }
 
-/* Handle Send Task */
+/* Handle Select Install Dir */
+// - this is coming from renderer initially
+// - after the user selects install dir, the main process handles the rest!
+async function handleSelectInstallDir() {
+  const settings = await getSettings(settingsPath)
+  const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+  let installDir = settings.installDir // default to the installDir in settings
+
+  if (!canceled) {
+    const selectedDir = filePaths[0]
+    console.log(`install dir selected: ${selectedDir}`)
+
+    // if selected dir is same as install dir, skip to verification
+    if (selectedDir === installDir) {
+      //@TODO: skip to verification here
+      console.log(
+        'selected install dir is the same as the current install dir - skipping to verification step'
+      )
+      return installDir
+    }
+
+    // check if the selected dir is empty, and then ask user to confirm install
+    const isEmpty = await isInstallDirEmpty(selectedDir)
+    if (isEmpty) {
+      // if the dir is empty, display confirmation to install in empty dir
+      const canInstall = await confirmEmptyDirInstall(selectedDir)
+      if (canInstall === 0) {
+        console.log('CAN INSTALL IN EMPTY DIR - GOOD JOB!')
+        installDir = selectedDir
+        await writeSettings(settingsPath, { ...settings, installDir })
+      } else {
+        console.log('USER SAID NO TO EMPTY DIR INSTALL')
+        await writeSettings(settingsPath, { ...settings, installDir })
+      }
+    } else {
+      // if the dir already exists, display dialog confirmation to install in existing dir
+      const canInstall = await confirmExistingDirInstall(selectedDir)
+      if (canInstall === 0) {
+        console.log('CAN INSTALL IN EXISTING DIR - GOOD JOB!')
+        installDir = selectedDir
+        await writeSettings(settingsPath, { ...settings, installDir })
+      } else {
+        console.log('USER SAID NO TO EXISTING DIR INSTALL')
+        await writeSettings(settingsPath, { ...settings, installDir })
+      }
+    }
+  } else {
+    console.log(`installDir select cancelled: reverting to ${installDir}`)
+    await writeSettings(settingsPath, { ...settings, installDir })
+  }
+
+  return installDir // return current value if cancelled
+}
+
+/* Confirm Empty Dir Install (main process only) */
+async function confirmEmptyDirInstall(dir) {
+  const { response } = await dialog.showMessageBox({
+    title: dialogMessages.confirmEmptyInstallDir_title,
+    message: dialogMessages.confirmEmptyInstallDir(dir),
+    type: 'none',
+    buttons: ['Proceed', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true
+  })
+  return response
+}
+
+/* Confirm Existing Dir Install (main process only) */
+async function confirmExistingDirInstall(dir) {
+  const { response } = await dialog.showMessageBox({
+    title: dialogMessages.confirmExistingInstallDir_title,
+    message: dialogMessages.confirmExistingInstallDir(dir),
+    type: 'none',
+    buttons: ['Proceed', 'Cancel'],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true
+  })
+  return response
+}
+
+/* Send Task Event */
 function sendTaskEvent(taskData) {
   const win = BrowserWindow.getAllWindows()[0]
 
@@ -126,20 +212,6 @@ function sendTaskEvent(taskData) {
   } else {
     console.error('no window found for sendTask!')
   }
-}
-
-/* Handle Select Install Dir */
-async function handleSelectInstallDir() {
-  const settings = await getSettings(settingsPath)
-  const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
-  if (!canceled) {
-    console.log(`install dir selected: ${filePaths[0]}`)
-    writeSettings(settingsPath, { ...settings, installDir: filePaths[0] })
-    return filePaths[0]
-  }
-
-  // console.log('dir selection canceled')
-  return settings.installDir // return current value if cancelled
 }
 
 /**
@@ -159,7 +231,7 @@ function selectInstallDirIPC() {
 function setMinimizeToTrayIPC() {
   ipcMain.on('setMinimizeToTray', async (event, isChecked) => {
     const settings = await getSettings(settingsPath)
-    writeSettings(settingsPath, { ...settings, minimizeToTray: isChecked })
+    await writeSettings(settingsPath, { ...settings, minimizeToTray: isChecked })
   })
 }
 
@@ -167,7 +239,7 @@ function setMinimizeToTrayIPC() {
 function setMinimizeOnPlayIPC() {
   ipcMain.on('setMinimizeOnPlay', async (event, isChecked) => {
     const settings = await getSettings(settingsPath)
-    writeSettings(settingsPath, { ...settings, minimizeOnPlay: isChecked })
+    await writeSettings(settingsPath, { ...settings, minimizeOnPlay: isChecked })
   })
 }
 
@@ -175,7 +247,7 @@ function setMinimizeOnPlayIPC() {
 function setDisableVideoIPC() {
   ipcMain.on('setDisableVideo', async (event, isChecked) => {
     const settings = await getSettings(settingsPath)
-    writeSettings(settingsPath, { ...settings, disableVideo: isChecked })
+    await writeSettings(settingsPath, { ...settings, disableVideo: isChecked })
   })
 }
 

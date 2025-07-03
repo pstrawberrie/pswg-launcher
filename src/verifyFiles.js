@@ -29,7 +29,7 @@ export const makeDirectories = (installDir) =>
         mkdirSync(dirPath, { recursive: true })
         created++
         console.log(`(${created}/${totalDirs}) created ${dirPath}`)
-        resolve()
+        resolve({ success: true })
       } catch (err) {
         console.error(`Error creating directory: ${dirPath}`, err)
         reject(err)
@@ -101,25 +101,26 @@ export async function verifyFiles(installDir) {
   }
 }
 
-async function run() {
-  const isEmpty = await isInstallDirEmpty()
+// TESTING
+// async function run() {
+//   const isEmpty = await isInstallDirEmpty()
 
-  if (isEmpty) {
-    console.log(
-      'install dir is empty - inform user and ask if they want to download client files to this dir'
-    )
-    // // if client says yes
-  } else {
-  }
-  await makeDirectories('E:/test_1')
-  const result = await verifyFiles('E:/test_1')
-  console.log('----------------')
-  console.log('----------------')
-  console.log(`Verified Files: ${result.verifiedFiles.length}/${result.totalFiles}`)
-  console.log(`Bad Hash Files: ${result.badHashFiles.length}/${result.totalFiles}`)
-  console.log(`Missing Files: ${result.missingFiles.length}/${result.totalFiles}`)
-  console.log('----------------')
-  console.log('----------------')
-}
+//   if (isEmpty) {
+//     console.log(
+//       'install dir is empty - inform user and ask if they want to download client files to this dir'
+//     )
+//     // // if client says yes
+//   } else {
+//   }
+//   await makeDirectories('E:/test_1')
+//   const result = await verifyFiles('E:/test_1')
+//   console.log('----------------')
+//   console.log('----------------')
+//   console.log(`Verified Files: ${result.verifiedFiles.length}/${result.totalFiles}`)
+//   console.log(`Bad Hash Files: ${result.badHashFiles.length}/${result.totalFiles}`)
+//   console.log(`Missing Files: ${result.missingFiles.length}/${result.totalFiles}`)
+//   console.log('----------------')
+//   console.log('----------------')
+// }
 
-run()
+// run()
