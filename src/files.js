@@ -1,5 +1,6 @@
 export const directoryList = [
   // parent directories will be created with fs mkdir
+  'ui',
   'texture/loading/space/images',
   'string/en',
   'miles'
@@ -63,8 +64,10 @@ export const fileList = [
   { filePath: 'SWGEmu_Setup.exe', fileHash: 'aefaeda4c825dae81e746fb5e2eb9d5a' },
   { filePath: 'swgemu_preload.cfg', fileHash: '0afeddc346edfb136bf55315f002f45a' },
   { filePath: 'swgemu_live.cfg', fileHash: 'cc7e4b7111e37be8d4f6cd9a656d6bd9' },
+  { filePath: 'swgemu_login.cfg', skipHash: true, fileHash: 'edcdef102648a3f5871d71e55af436f7' },
   { filePath: 'SWGEmu.exe', fileHash: '1c3f68d830cf184333a5de2167e07c4a' },
   { filePath: 'swgemu.cfg', fileHash: '8adadb1ef787992309a94ec005fc4f48' },
+  { filePath: 'user.cfg', skipHash: true },
   { filePath: 's207_r.dll', fileHash: '593574e730ef8eecbf42c9a440bdcbd6' },
   { filePath: 's206_r.dll', fileHash: 'c95f52d9d81c5d62e774f9f1250b6b76' },
   { filePath: 's205_r.dll', fileHash: '875d3b2a91325b53e9da62af256c3e3c' },
@@ -79,11 +82,25 @@ export const fileList = [
     filePath: 'texture/loading/space/images/space_load_pvp.dds',
     fileHash: '294834dfcd18376d76392ff1bee48911'
   },
+  {
+    filePath: 'texture/ui_background_arrow.dds',
+    fileHash: 'de1ee760452351ad81ed4b4db4cb9683'
+  },
+  {
+    filePath: 'texture/ui_logo_lucas.dds',
+    fileHash: '81362b665f176acb5a2319feeb4ca784'
+  },
+  {
+    filePath: 'texture/ui_rebel_starfield.dds',
+    fileHash: '78d15ffe298ba202eb924143fcc7adf0'
+  },
   { filePath: 'string/en/live_motd.stf', fileHash: '6402ccde8afc301fb9ae8f130f11d6ad' },
   { filePath: 'string/en/test_motd.stf', fileHash: '4f63fe1651aff0a00cecd3c3c0b3e8bc' },
   { filePath: 'string/en/ui_auc.stf', fileHash: 'd7a528429f7e0e6c1db9f9179c362b7b' },
   { filePath: 'miles/mssdsp.flt', fileHash: 'b88bf9c506cd612fc37b47ad2e1c84b6' },
   { filePath: 'miles/Msseax.m3d', fileHash: 'b24028b6511fa3cb96bcbf1ef2838696' },
   { filePath: 'miles/mssmp3.asi', fileHash: '43bfc9015cf90c161567fb0c0acaf714' },
-  { filePath: 'miles/msssoft.m3d', fileHash: '3e9029826d8cb962874584ab795a9d31' }
+  { filePath: 'miles/msssoft.m3d', fileHash: '3e9029826d8cb962874584ab795a9d31' },
+  { filePath: 'ui/ui_auction.inc', fileHash: 'b59cea606856db021d7b3f02d8126a98' },
+  { filePath: 'ui/ui_backdrop_default.inc', fileHash: '4a2b29124f4e61c886e5e1a3c027f1b1' }
 ].reverse()

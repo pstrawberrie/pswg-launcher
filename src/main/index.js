@@ -1,9 +1,19 @@
-import { app, Tray, Menu, nativeImage, shell, BrowserWindow, dialog, ipcMain } from 'electron'
+import {
+  app,
+  Tray,
+  Menu,
+  nativeImage,
+  shell,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  session
+} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getSettings, writeSettings } from '../settings.js'
-import { dialogMessages } from '../strings.js'
-import { isInstallDirEmpty, makeDirectories, verifyFiles } from '../verifyFiles.js'
+import { taskMessages, dialogMessages } from '../strings.js'
+import { isInstallDirEmpty, makeDirectories, verifyFiles, downloadFiles } from '../fileTasks.js'
 
 const settingsPath = `${app.getPath('userData')}/settings.json`
 
@@ -116,6 +126,7 @@ async function sendSettings() {
   const settings = await getSettings(settingsPath)
 
   if (win && settings) {
+    console.log('Sending settings to renderer via sendSettings')
     win.webContents.send('settings', settings)
   } else {
     console.error(`Error sending settings: win: ${win} / settings: ${settings}`)
@@ -204,6 +215,20 @@ async function confirmExistingDirInstall(dir) {
   return response
 }
 
+/* Confirm Repair (main process only) */
+async function confirmRepair(dir, numFiles) {
+  const { response } = await dialog.showMessageBox({
+    title: dialogMessages.confirmFileRepair_title,
+    message: dialogMessages.confirmFileRepair(dir, numFiles),
+    type: 'none',
+    buttons: ['Proceed', 'Cancel'],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true
+  })
+  return response
+}
+
 /* Send Task Event */
 function sendTaskEvent(taskData) {
   const win = BrowserWindow.getAllWindows()[0]
@@ -219,38 +244,93 @@ function sendTaskEvent(taskData) {
 function handleVerifyClientIPC() {
   ipcMain.on('verifyClient', async () => {
     const settings = await getSettings(settingsPath)
+    const { installDir } = settings
     const win = BrowserWindow.getAllWindows()[0]
 
+    if (!win) {
+      console.error('window not found in handleVerifyClientIPC')
+      sendTaskEvent({ fileVerificationError: true })
+    }
+
+    // Do File Downloads
+    async function doDownloadFiles(filesToDownload) {
+      console.log('starting file downloads...')
+      const downloadResult = await downloadFiles(
+        filesToDownload,
+        installDir,
+        session,
+        sendTaskEvent
+      )
+
+      if (downloadResult.success) {
+        // downloads succeeded!
+        console.log('downloads succeeded! re-verify now')
+        await doVerifyFiles()
+      } else {
+        // download(s) failed, handle errors
+        console.log('DOWNLAOAD TASK FAILED - handle error here')
+        console.log(downloadResult)
+      }
+    }
+
+    // Do File Verification
+    async function doVerifyFiles() {
+      console.log('directory not empty - starting verification')
+      const verificationResults = await verifyFiles(installDir, sendTaskEvent)
+
+      console.log('--- Verification results ---')
+      // console.log(verificationResults)
+      const { totalFiles, missingFiles, badHashFiles } = verificationResults
+      console.log(`totalFiles: ${totalFiles.length}`)
+      console.log(`missingFiles: ${missingFiles.length}`)
+      console.log(`badHashFiles: ${badHashFiles.length}`)
+
+      if (missingFiles.length || badHashFiles.length) {
+        // missing or mismatched hash files were detected
+        // get files array for files that need to be repaired
+        const totalToRepair = missingFiles.length + badHashFiles.length
+        let filesToRepair = []
+
+        if (missingFiles) filesToRepair = [...filesToRepair, ...missingFiles]
+        if (badHashFiles) filesToRepair = [...filesToRepair, ...badHashFiles]
+        sendTaskEvent({ message: `${totalToRepair}/${totalFiles} files need to be repaired` })
+
+        // ask user if they want to repair files
+        console.log('user needs to repair files - opening repair dialog')
+
+        const canRepair = await confirmRepair(installDir, filesToRepair.length)
+        if (canRepair === 0) {
+          console.log('CAN REPAIR!')
+          await doDownloadFiles(filesToRepair)
+        } else {
+          console.log('USER SAID NO TO REPAIR - reset the installDir')
+          await writeSettings(settingsPath, { ...settings, installDir: '' })
+          await sendSettings()
+          sendTaskEvent({ message: taskMessages.selectInstallDir })
+        }
+      } else {
+        // verification succeeded - play button!
+        sendTaskEvent({ ready: true })
+      }
+    }
+
+    // Kick off verification process
     try {
-      const isEmpty = await isInstallDirEmpty(settings.installDir)
+      const isEmpty = await isInstallDirEmpty(installDir)
       if (isEmpty) {
-        const makeDirs = await makeDirectories(settings.installDir, sendTaskEvent)
+        const makeDirs = await makeDirectories(installDir, sendTaskEvent)
         if (makeDirs.success) {
           // handle makedirs success
           console.log('makedirs success!')
 
-          if (win) {
-            // do downloads here
-            console.log('do downloads here')
-          }
+          // download all files
+          await doDownloadFiles(null)
         } else {
           // handle makedirs error
           console.log('makedirs error =[')
         }
       } else {
-        // verify here
-        console.log('directory not empty - starting verification')
-        const verificationResults = await verifyFiles(settings.installDir, sendTaskEvent)
-
-        console.log('--- Verification results ---')
-        console.log(verificationResults)
-        const { totalFiles, verifiedFiles, missingFiles, badHashFiles } = verificationResults
-
-        if (missingFiles || badHashFiles) {
-          // ask user if they want to repair files
-          const totalToRepair = missingFiles.length + badHashFiles.length
-          sendTaskEvent({ message: `${totalToRepair}/${totalFiles} files need to be repaired` })
-        }
+        await doVerifyFiles()
       }
     } catch (err) {
       console.error('Error in handleVerifyClientIPC', err)
@@ -302,7 +382,7 @@ function playGameIPC() {
     const win = BrowserWindow.getAllWindows()[0]
 
     if (win) {
-      shell.openPath('E:/psWG/SWGEmu.exe')
+      shell.openPath(join(settings.installDir, 'SWGEmu.exe'))
       if (settings.minimizeOnPlay) win.minimize()
     }
   })

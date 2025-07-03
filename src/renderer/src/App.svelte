@@ -28,11 +28,25 @@
   let fileDownloadError = $state(false)
   let noInstallDir = $derived(installDir === '')
 
+  function clearErrors() {
+    makeDirectoriesError = false
+    fileVerificationError = false
+    fileDownloadError = false
+    taskError = false
+  }
+
   function setReadyToPlay() {
+    clearErrors()
     taskMessage = taskMessages.readyToPlay
     taskProgress = 100
-    taskError = false
     readyToPlay = true
+  }
+
+  function removeReadyToPlay() {
+    clearErrors()
+    taskMessage = ''
+    taskProgress = 0
+    readyToPlay = false
   }
 
   // Renderer IPC
@@ -73,11 +87,14 @@
   }
 
   function handleTaskEvent(taskData) {
-    console.log(taskData)
-
+    // console.log(taskData)
     if (taskData.ready) {
       setReadyToPlay()
-    } else if (taskData.makeDirectoriesError) {
+    } else {
+      removeReadyToPlay()
+    }
+
+    if (taskData.makeDirectoriesError) {
       makeDirectoriesError = true
       taskError = true
       taskMessage = taskMessages.makeDirectoriesError

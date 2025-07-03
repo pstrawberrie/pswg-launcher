@@ -68,12 +68,18 @@ export async function verifyFiles(installDir, eventEmitter) {
       })
 
       await new Promise((resolve, reject) => {
+        eventEmitter({
+          message: `Verifying ${file.filePath}...`,
+          progress: getPercentComplete(processedCount, totalFiles)
+        })
+
         stream.on('end', () => {
           const fileHash = hash.digest('hex')
           console.log(`hash for ${file.filePath}: ${fileHash}`)
 
-          if (fileHash === file.fileHash) {
-            console.log(`verified hash: ${file.filePath}`)
+          if (fileHash === file.fileHash || file?.skipHash) {
+            if (fileHash === file.fileHash) console.log(`verified hash: ${file.filePath}`)
+            if (file?.skipHash) console.log(`skipped hash for user file: ${file.filePath}`)
             verifiedFiles.push(file)
           } else {
             console.log(`bad hash: ${file.filePath}`)
@@ -81,7 +87,6 @@ export async function verifyFiles(installDir, eventEmitter) {
           }
 
           processedCount++
-          console.log(`${getPercentComplete()}% (${processedCount}/${totalFiles})`)
           eventEmitter({
             message: `${processedCount}/${totalFiles} files verified`,
             progress: getPercentComplete(processedCount, totalFiles)
@@ -103,15 +108,16 @@ export async function verifyFiles(installDir, eventEmitter) {
             resolve()
           } else {
             console.error(`Error processing file: ${file.filePath}`, err)
+            eventEmitter({ fileVerificationError: true })
             reject(err)
           }
         })
       })
     } catch (err) {
       console.error(`Failed to verify file: ${file.filePath}`, err)
+      eventEmitter({ fileVerificationError: true })
     }
 
-    console.log(`${processedCount}/${totalFiles}`)
     if (processedCount === totalFiles) {
       eventEmitter({ success: true })
       return { totalFiles, verifiedFiles, missingFiles, badHashFiles }
@@ -119,26 +125,96 @@ export async function verifyFiles(installDir, eventEmitter) {
   }
 }
 
+export async function downloadFiles(files, installDir, session, eventEmitter) {
+  const downloadUrlBase = 'https://swg.pstraw.net/files'
+  const filesToDownload = files === null ? fileList : files
+
+  const totalFiles = filesToDownload.length
+  const successfulDownloads = []
+  const failedDownloads = []
+
+  let completedCount = 0
+
+  for (const file of filesToDownload) {
+    await new Promise((res) => {
+      const downloadUrl = `${downloadUrlBase}/${file.filePath}`
+      const filename = file.filePath.split('/').pop()
+      const savePath = join(installDir, file.filePath)
+
+      const onDownload = (event, item) => {
+        // only handle our file (not other downloads)
+        if (!item.getURL().endsWith(file.filePath)) {
+          console.log('issue with the file name in downloadFiles -> handleDownload')
+          return
+        }
+
+        // remove listener after match
+        session.defaultSession.removeListener('will-download', onDownload)
+
+        // set save path of file
+        item.setSavePath(savePath)
+
+        // Progress tracking
+        item.on('updated', () => {
+          const received = item.getReceivedBytes()
+          const total = item.getTotalBytes()
+
+          // Emit individual file progress
+          eventEmitter({
+            message: `${getPercentComplete(completedCount, totalFiles)}% Complete:  Downloading ${filename} (${completedCount + 1}/${totalFiles})`,
+            progress: Math.floor((received / total) * 100)
+          })
+        })
+
+        item.once('done', (event, state) => {
+          completedCount++
+
+          if (state === 'completed') {
+            console.log(`Download completed: ${filename}`)
+            successfulDownloads.push(file)
+          } else {
+            console.error(`Download failed: ${filename} - ${state}`)
+            failedDownloads.push(file)
+          }
+
+          eventEmitter({
+            message: `${getPercentComplete(completedCount, totalFiles)}% Complete`,
+            progress: getPercentComplete(completedCount, totalFiles)
+          })
+
+          res()
+        })
+      }
+
+      session.defaultSession.on('will-download', onDownload)
+      session.defaultSession.downloadURL(downloadUrl)
+    })
+  }
+
+  const success = failedDownloads.length === 0
+  if (success) {
+    eventEmitter({ success })
+  } else {
+    eventEmitter({ fileDownloadError: true })
+  }
+
+  return {
+    success,
+    totalFiles,
+    successfulDownloads,
+    failedDownloads
+  }
+}
+
 // TESTING
 // async function run() {
-//   const isEmpty = await isInstallDirEmpty()
-
-//   if (isEmpty) {
-//     console.log(
-//       'install dir is empty - inform user and ask if they want to download client files to this dir'
-//     )
-//     // // if client says yes
-//   } else {
-//   }
-//   await makeDirectories('E:/test_1')
-//   const result = await verifyFiles('E:/test_1')
-//   console.log('----------------')
+//   // await makeDirectories('E:/pSWG_test')
+//   const result = await verifyFiles('E:/pSWG_test')
 //   console.log('----------------')
 //   console.log(`Verified Files: ${result.verifiedFiles.length}/${result.totalFiles}`)
 //   console.log(`Bad Hash Files: ${result.badHashFiles.length}/${result.totalFiles}`)
 //   console.log(`Missing Files: ${result.missingFiles.length}/${result.totalFiles}`)
-//   console.log('----------------')
-//   console.log('----------------')
+//   console.log(`fileList total files: ${fileList.length}`)
 // }
 
 // run()
