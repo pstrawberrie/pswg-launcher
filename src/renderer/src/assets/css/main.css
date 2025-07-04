@@ -3,6 +3,7 @@
 
 body,
 input,
+select,
 label {
   cursor: url('../images/cursor.png') 1 1, auto;
 }
@@ -114,30 +115,51 @@ label {
 .settings .title {
   text-align: center;
   font-family: var(--ff-roboto);
-}
-
-.settings div:not(.bottom) {
-  padding: 3px 20px;
-  border-top: 1px solid rgba(255, 255, 255, .2);
-}
-
-.settings div:not(.bottom):hover {
-  background-color: rgba(255, 255, 255, .085);
-}
-
-.settings div:first-child {
-  border: 0;
+  padding-top: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, .2);
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  margin-bottom: 8px;
 }
 
 .settings .bottom {
-  margin-top: 6px;
+  margin-top: 2px;
+  padding-bottom: 8px;
+  line-height: 1;
 }
 
-.settings button {
+.settings .bottom div {
+  padding: 3px 22px;
+}
+
+.settings .bottom div:hover {
+  background-color: rgba(255, 255, 255, .085);
+}
+
+.settings .top {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: auto;
+  width: calc(100% - 40px);
+}
+
+.settings .top label {
+  font-size: 14px;
+  font-family: var(--ff-roboto);
+}
+
+.settings .top select {
+  position: relative;
+  top: -4px;
+  width: 100%;
+}
+
+.settings .top button {
   position: relative;
   padding: 5px 10px;
-  width: calc(100% - 40px);
-  margin: auto;
+  width: 100%;
   border-radius: 4px;
   background-color: rgba(255, 255, 255, .15);
   color: var(--c-white);
@@ -148,12 +170,8 @@ label {
   cursor: url('../images/cursor_link.png') 15 15, auto;
 }
 
-.settings button:hover {
+.settings .top button:hover {
   border-color: var(--c-blue);
-}
-
-.settings button+button {
-  margin-top: 6px;
 }
 
 .logo {

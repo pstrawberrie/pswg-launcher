@@ -15,7 +15,7 @@
   let minimizeToTray = $state(true)
   let minimizeOnPlay = $state(true)
   let disableVideo = $state(false)
-  let disableVerification = $state(false)
+  let serverChoice = $state('live')
 
   // Task state
   let taskMessage = $state(taskMessages.starting)
@@ -60,10 +60,11 @@
   const ipcSetMinimizeToTray = async (isChecked) => await window.api.setMinimizeToTray(isChecked)
   const ipcSetMinimizeOnPlay = async (isChecked) => await window.api.setMinimizeOnPlay(isChecked)
   const ipcSetDisableVideo = async (isChecked) => await window.api.setDisableVideo(isChecked)
-  const ipcSetDisableVerification = async (isChecked) =>
-    await window.api.setDisableVerification(isChecked)
+  const ipcSetServer = async (serverChoice) => await window.api.setServer(serverChoice)
 
   const ipcVerifyClient = () => window.electron.ipcRenderer.send('verifyClient')
+  const ipcSWGSettings = () => window.electron.ipcRenderer.send('SWGSettings')
+  const ipcClientFolder = () => window.electron.ipcRenderer.send('clientFolder')
   const ipcPlay = () => window.electron.ipcRenderer.send('playGame')
 
   // IPC Functions
@@ -80,8 +81,8 @@
     disableVideo = e.target.checked // client-side also needs to immediately update
   }
 
-  function onDisableVerificationChange(e) {
-    ipcSetDisableVerification(e.target.checked)
+  function onServerChange(e) {
+    ipcSetServer(e.target.value)
   }
 
   function handleGetSettings(settings) {
@@ -91,6 +92,7 @@
     minimizeToTray = settings.minimizeToTray
     minimizeOnPlay = settings.minimizeOnPlay
     disableVideo = settings.disableVideo
+    serverChoice = settings.server
   }
 
   function handleTaskEvent(taskData) {
@@ -175,20 +177,22 @@
   }}><span class="i i-cog"></span></button
 >
 <div class={['settings', isSettingsOpen ? 'open' : '']}>
-  <div class="title">Settings</div>
-  <button>Launch SWG Settings</button>
-  <button class="client-folder">Open Client Folder</button>
-  <div class="bottom">
-    <div>
-      <input
-        type="checkbox"
-        name="disableVerification"
-        id="disableVerification"
-        checked={disableVerification}
-        onchange={onDisableVerificationChange}
-      />
-      <label for="disableVerification">Disable Verification</label>
+  {#if !noInstallDir && readyToPlay}
+    <div class="title">Settings</div>
+    <div class="top">
+      <button onclick={ipcSWGSettings}>Launch SWG Settings</button>
+      <button class="client-folder" onclick={ipcClientFolder}>Open Client Folder</button>
+
+      <div>
+        <label for="serverChoice">Server</label>
+        <select onchange={onServerChange} value={serverChoice}>
+          <option value="live">pSWG Live</option>
+          <option value="local">Local Development</option>
+        </select>
+      </div>
     </div>
+  {/if}
+  <div class="bottom">
     <div>
       <input
         type="checkbox"

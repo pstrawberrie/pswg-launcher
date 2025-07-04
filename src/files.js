@@ -80,7 +80,7 @@ export const fileList = [
   { filePath: 'dbghelp.dll', fileHash: '21e77bcbe81c83284aeea5127c197718' },
   {
     filePath: 'texture/loading/space/images/space_load_pvp.dds',
-    fileHash: '294834dfcd18376d76392ff1bee48911'
+    fileHash: '0da3e9cbf1c4735d8b22cf402bb7943b'
   },
   {
     filePath: 'texture/ui_background_arrow.dds',
@@ -94,7 +94,7 @@ export const fileList = [
     filePath: 'texture/ui_rebel_starfield.dds',
     fileHash: '78d15ffe298ba202eb924143fcc7adf0'
   },
-  { filePath: 'string/en/live_motd.stf', fileHash: '6402ccde8afc301fb9ae8f130f11d6ad' },
+  { filePath: 'string/en/live_motd.stf', fileHash: '2df68c7eb150b642252184e9259687b8' },
   { filePath: 'string/en/test_motd.stf', fileHash: '4f63fe1651aff0a00cecd3c3c0b3e8bc' },
   { filePath: 'string/en/ui_auc.stf', fileHash: 'd7a528429f7e0e6c1db9f9179c362b7b' },
   { filePath: 'miles/mssdsp.flt', fileHash: 'b88bf9c506cd612fc37b47ad2e1c84b6' },

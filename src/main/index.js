@@ -11,7 +11,7 @@ import {
 } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { getSettings, writeSettings } from '../settings.js'
+import { getSettings, writeSettings, setServer } from '../settings.js'
 import { taskMessages, dialogMessages } from '../strings.js'
 import { isInstallDirEmpty, makeDirectories, verifyFiles, downloadFiles } from '../fileTasks.js'
 
@@ -33,6 +33,7 @@ function createWindow() {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    mainWindow.focus()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -79,8 +80,10 @@ app.whenReady().then(() => {
   setMinimizeToTrayIPC()
   setMinimizeOnPlayIPC()
   setDisableVideoIPC()
-  setDisableVerificationIPC()
+  setServerIPC()
 
+  SWGSettingsIPC()
+  clientFolderIPC()
   playGameIPC()
 
   // Main Window
@@ -334,7 +337,15 @@ function handleVerifyClientIPC() {
         await doVerifyFiles()
       }
     } catch (err) {
-      console.error('Error in handleVerifyClientIPC', err)
+      if (err.code === 'ENOENT') {
+        sendTaskEvent({
+          message: `Error: folder ${installDir} does not exist - choose a new client folder`
+        })
+        await writeSettings(settingsPath, { ...settings, installDir: '' })
+        await sendSettings()
+      } else {
+        console.error('Error in handleVerifyClientIPC', err)
+      }
     }
   })
 }
@@ -377,11 +388,37 @@ function setDisableVideoIPC() {
 }
 
 // Set Disable Verification IPC
-// @TODO: use this setting later
-function setDisableVerificationIPC() {
-  ipcMain.on('setDisableVerification', async (event, isChecked) => {
+function setServerIPC() {
+  ipcMain.on('setServer', async (event, server) => {
     const settings = await getSettings(settingsPath)
-    await writeSettings(settingsPath, { ...settings, disableVerification: isChecked })
+
+    console.log(`setServer: ${server}`) //REMOVE
+    await writeSettings(settingsPath, { ...settings, server })
+    await setServer(settings.installDir, server)
+  })
+}
+
+// SWG Settings IPC
+function SWGSettingsIPC() {
+  ipcMain.on('SWGSettings', async () => {
+    const settings = await getSettings(settingsPath)
+    const win = BrowserWindow.getAllWindows()[0]
+
+    if (win) {
+      shell.openPath(join(settings.installDir, 'SWGEmu_Setup.exe'))
+    }
+  })
+}
+
+// SWG Settings IPC
+function clientFolderIPC() {
+  ipcMain.on('clientFolder', async () => {
+    const settings = await getSettings(settingsPath)
+    const win = BrowserWindow.getAllWindows()[0]
+
+    if (win) {
+      shell.openPath(settings.installDir)
+    }
   })
 }
 

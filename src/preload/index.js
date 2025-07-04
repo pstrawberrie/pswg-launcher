@@ -11,7 +11,7 @@ const api = {
   setMinimizeToTray: (isChecked) => ipcRenderer.send('setMinimizeToTray', isChecked),
   setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked),
   setDisableVideo: (isChecked) => ipcRenderer.send('setDisableVideo', isChecked),
-  setDisableVerification: (isChecked) => ipcRenderer.send('setDisableVerification', isChecked),
+  setServer: (server) => ipcRenderer.send('setServer', server),
 
   // events
   onSettingsEvent: (callback) => ipcRenderer.on('settings', (_event, value) => callback(value)),
