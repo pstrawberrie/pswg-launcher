@@ -84,7 +84,7 @@ export const fileList = [
   },
   {
     filePath: 'texture/ui_background_arrow.dds',
-    fileHash: 'de1ee760452351ad81ed4b4db4cb9683'
+    fileHash: 'ba46f097ca3e08024bbdcdc5c5f38e08'
   },
   {
     filePath: 'texture/ui_logo_lucas.dds',
