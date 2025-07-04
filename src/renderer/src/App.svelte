@@ -9,12 +9,13 @@
   let videoEl = $state()
 
   // Settings state
+  let isSettingsOpen = $state(false)
+
   let installDir = $state('')
   let minimizeToTray = $state(true)
   let minimizeOnPlay = $state(true)
   let disableVideo = $state(false)
-
-  let isSettingsOpen = $state(false)
+  let disableVerification = $state(false)
 
   // Task state
   let taskMessage = $state(taskMessages.starting)
@@ -59,6 +60,8 @@
   const ipcSetMinimizeToTray = async (isChecked) => await window.api.setMinimizeToTray(isChecked)
   const ipcSetMinimizeOnPlay = async (isChecked) => await window.api.setMinimizeOnPlay(isChecked)
   const ipcSetDisableVideo = async (isChecked) => await window.api.setDisableVideo(isChecked)
+  const ipcSetDisableVerification = async (isChecked) =>
+    await window.api.setDisableVerification(isChecked)
 
   const ipcVerifyClient = () => window.electron.ipcRenderer.send('verifyClient')
   const ipcPlay = () => window.electron.ipcRenderer.send('playGame')
@@ -75,6 +78,10 @@
   function onDisableVideoChange(e) {
     ipcSetDisableVideo(e.target.checked)
     disableVideo = e.target.checked // client-side also needs to immediately update
+  }
+
+  function onDisableVerificationChange(e) {
+    ipcSetDisableVerification(e.target.checked)
   }
 
   function handleGetSettings(settings) {
@@ -169,35 +176,49 @@
 >
 <div class={['settings', isSettingsOpen ? 'open' : '']}>
   <div class="title">Settings</div>
-  <div>
-    <input
-      type="checkbox"
-      name="minimizeToTray"
-      id="minimizeToTray"
-      checked={minimizeToTray}
-      onchange={onMinimizeToTrayChange}
-    />
-    <label for="minimizeToTray">Minimize To Tray</label>
-  </div>
-  <div>
-    <input
-      type="checkbox"
-      name="minimizeOnPlay"
-      id="minimizeOnPlay"
-      checked={minimizeOnPlay}
-      onchange={onMinimizeOnPlayChange}
-    />
-    <label for="minimizeOnPlay">Minimize On Play</label>
-  </div>
-  <div>
-    <input
-      type="checkbox"
-      name="disableVideo"
-      id="disableVideo"
-      checked={disableVideo}
-      onchange={onDisableVideoChange}
-    />
-    <label for="disableVideo">Disable Background</label>
+  <button>Launch SWG Settings</button>
+  <button class="client-folder">Open Client Folder</button>
+  <div class="bottom">
+    <div>
+      <input
+        type="checkbox"
+        name="disableVerification"
+        id="disableVerification"
+        checked={disableVerification}
+        onchange={onDisableVerificationChange}
+      />
+      <label for="disableVerification">Disable Verification</label>
+    </div>
+    <div>
+      <input
+        type="checkbox"
+        name="minimizeToTray"
+        id="minimizeToTray"
+        checked={minimizeToTray}
+        onchange={onMinimizeToTrayChange}
+      />
+      <label for="minimizeToTray">Minimize To Tray</label>
+    </div>
+    <div>
+      <input
+        type="checkbox"
+        name="minimizeOnPlay"
+        id="minimizeOnPlay"
+        checked={minimizeOnPlay}
+        onchange={onMinimizeOnPlayChange}
+      />
+      <label for="minimizeOnPlay">Minimize On Play</label>
+    </div>
+    <div>
+      <input
+        type="checkbox"
+        name="disableVideo"
+        id="disableVideo"
+        checked={disableVideo}
+        onchange={onDisableVideoChange}
+      />
+      <label for="disableVideo">Disable Background</label>
+    </div>
   </div>
 </div>
 

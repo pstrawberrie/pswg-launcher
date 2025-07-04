@@ -5,7 +5,8 @@ const defaultSettings = {
   installDir: '',
   minimizeToTray: true,
   minimizeOnPlay: true,
-  disableVideo: false
+  disableVideo: false,
+  disableVerification: false
 }
 
 export function getSettings(settingsPath) {

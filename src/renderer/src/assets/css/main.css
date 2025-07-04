@@ -30,7 +30,7 @@ label {
   display: flex;
   align-items: center;
   padding: 0 8px 1px 4px;
-  background-color: rgba(255,255,255,.1);
+  background-color: rgba(255, 255, 255, .1);
   border-radius: 2px;
   line-height: 1;
   height: 30px;
@@ -91,9 +91,9 @@ label {
   top: 10px;
   right: 43px;
   flex-direction: column;
-  background-color: rgba(0,0,0,.85);
+  background-color: rgba(0, 0, 0, .85);
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid rgba(255, 255, 255, .1);
   border-radius: 2px;
 
   overflow: hidden;
@@ -116,13 +116,44 @@ label {
   font-family: var(--ff-roboto);
 }
 
-.settings div {
- padding: 3px 20px;
- border-top: 1px solid rgba(255,255,255,.2);
+.settings div:not(.bottom) {
+  padding: 3px 20px;
+  border-top: 1px solid rgba(255, 255, 255, .2);
+}
+
+.settings div:not(.bottom):hover {
+  background-color: rgba(255, 255, 255, .085);
 }
 
 .settings div:first-child {
   border: 0;
+}
+
+.settings .bottom {
+  margin-top: 6px;
+}
+
+.settings button {
+  position: relative;
+  padding: 5px 10px;
+  width: calc(100% - 40px);
+  margin: auto;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, .15);
+  color: var(--c-white);
+  border: 1px solid rgba(255, 255, 255, .1);
+  outline: 0;
+  font-family: var(--ff-roboto);
+
+  cursor: url('../images/cursor_link.png') 15 15, auto;
+}
+
+.settings button:hover {
+  border-color: var(--c-blue);
+}
+
+.settings button+button {
+  margin-top: 6px;
 }
 
 .logo {
@@ -165,7 +196,7 @@ label {
   opacity: .69;
 }
 
-.action span + span {
+.action span+span {
   margin-top: 1px;
 }
 
@@ -174,7 +205,7 @@ label {
 }
 
 .action.select-install-dir:hover {
-  border-color: var(--c-yellow);
+  border-color: var(--c-blue);
 }
 
 .action:hover {

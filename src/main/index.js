@@ -79,6 +79,7 @@ app.whenReady().then(() => {
   setMinimizeToTrayIPC()
   setMinimizeOnPlayIPC()
   setDisableVideoIPC()
+  setDisableVerificationIPC()
 
   playGameIPC()
 
@@ -372,6 +373,15 @@ function setDisableVideoIPC() {
   ipcMain.on('setDisableVideo', async (event, isChecked) => {
     const settings = await getSettings(settingsPath)
     await writeSettings(settingsPath, { ...settings, disableVideo: isChecked })
+  })
+}
+
+// Set Disable Verification IPC
+// @TODO: use this setting later
+function setDisableVerificationIPC() {
+  ipcMain.on('setDisableVerification', async (event, isChecked) => {
+    const settings = await getSettings(settingsPath)
+    await writeSettings(settingsPath, { ...settings, disableVerification: isChecked })
   })
 }
 
