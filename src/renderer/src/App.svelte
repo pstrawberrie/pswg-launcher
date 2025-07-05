@@ -9,6 +9,11 @@
   let infoButtonEl
   let videoEl = $state()
 
+  // Status state
+  let statusOnline = $state(false)
+  let statusPlayers = $state(0)
+  let statusUptime = $state(0)
+
   // Settings state
   let isSettingsOpen = $state(false)
   let isInfoOpen = $state(false)
@@ -49,10 +54,11 @@
   }
 
   // Renderer IPC
+  const ipcGetStatus = async () => await window.api.getStatus()
   const ipcGetSettings = async () => await window.api.getSettings()
   const ipcSelectInstallDir = async () => {
     installDir = await window.api.selectInstallDir()
-    console.log('got install dir, now we can kickoff the verification!')
+    // console.log('ipcSelectInstallDir got install dir, now we can kickoff the verification!')
     ipcVerifyClient()
   }
   const ipcSetMinimizeToTray = async (isChecked) => await window.api.setMinimizeToTray(isChecked)
@@ -83,8 +89,16 @@
     ipcSetServer(e.target.value)
   }
 
+  function handleGetStatus(status) {
+    // console.log('handleGetStatus: ', status)
+
+    statusOnline = status.online
+    statusPlayers = status.players
+    statusUptime = status.uptime
+  }
+
   function handleGetSettings(settings) {
-    console.log('handleGetSettings: ', settings)
+    // console.log('handleGetSettings: ', settings)
 
     installDir = settings.installDir
     minimizeToTray = settings.minimizeToTray
@@ -94,7 +108,7 @@
   }
 
   function handleTaskEvent(taskData) {
-    // console.log(taskData)
+    // console.log('handleTaskEvent: ', taskData)
     if (taskData?.ready) {
       setReadyToPlay()
     } else {
@@ -110,9 +124,13 @@
 
   // On Mount
   $effect(async () => {
+    const status = await ipcGetStatus()
+    handleGetStatus(status)
+
     const settings = await ipcGetSettings()
     handleGetSettings(settings)
 
+    window.api.onStatusEvent((value) => handleGetStatus(value))
     window.api.onSettingsEvent((value) => handleGetSettings(value))
     window.api.onTaskEvent((value) => handleTaskEvent(value))
 
@@ -150,10 +168,14 @@
   }}
 />
 
-<div class="status">
-  <div><span class="i i-power-outline success"></span> Server Status: Online</div>
-  <div><span class="i i-group blue"></span> 69 Characters Logged In</div>
-  <div><span class="i i-chart-line yellow"></span> Server Uptime: 28d 15h</div>
+<div class={['status', statusOnline ? '' : 'error']}>
+  <div>
+    <span class="i i-power-outline success"></span> Server Status: {statusOnline
+      ? 'online'
+      : 'offline'}
+  </div>
+  <div><span class="i i-group blue"></span> {statusPlayers} Characters Logged In</div>
+  <div><span class="i i-chart-line yellow"></span> Server Uptime: {statusUptime}</div>
 </div>
 
 <button

@@ -73,6 +73,7 @@ app.whenReady().then(() => {
   })
 
   // IPC
+  getStatusIPC()
   getSettingsIPC()
   selectInstallDirIPC()
   handleVerifyClientIPC()
@@ -91,6 +92,9 @@ app.whenReady().then(() => {
 
   // Tray
   setupTray()
+
+  // Send Status
+  setInterval(fetchStatusInterval, 60000)
 })
 
 /* Set Up Tray */
@@ -114,6 +118,49 @@ function setupTray() {
   })
 }
 
+/* Get status from URL */
+async function fetchStatus() {
+  const statusURL = 'https://swg.pstraw.net/status'
+  const offlineStatusObj = { online: false, players: 0, uptime: 0 }
+
+  try {
+    const response = await fetch(statusURL)
+    if (!response.ok) {
+      console.error('bad response from fetchStatus')
+      return offlineStatusObj
+    } else {
+      const data = await response.json()
+      return data
+    }
+  } catch (err) {
+    console.error('error in fetchStatus: ', err)
+    return offlineStatusObj
+  }
+}
+
+/* Fetch Status Interval (send ever x seconds) */
+async function fetchStatusInterval() {
+  const status = await fetchStatus()
+  sendStatusEvent(status)
+}
+
+/* Send Status Event */
+function sendStatusEvent(statusData) {
+  const win = BrowserWindow.getAllWindows()[0]
+
+  if (win) {
+    win.webContents.send('status', statusData)
+  } else {
+    console.error('no window found for sendStatusEvent!')
+  }
+}
+
+/* Get Status */
+async function handleGetStatus() {
+  const status = await fetchStatus()
+  return status
+}
+
 /* Send Task Event */
 function sendTaskEvent(taskData) {
   const win = BrowserWindow.getAllWindows()[0]
@@ -121,7 +168,7 @@ function sendTaskEvent(taskData) {
   if (win) {
     win.webContents.send('task', taskData)
   } else {
-    console.error('no window found for sendTask!')
+    console.error('no window found for sendTaskEvent!')
   }
 }
 
@@ -360,6 +407,11 @@ function handleVerifyClientIPC() {
 /**
  * IPC Functions
  */
+// Get Settings IPC
+function getStatusIPC() {
+  ipcMain.handle('getStatus', handleGetStatus)
+}
+
 // Get Settings IPC
 function getSettingsIPC() {
   ipcMain.handle('getSettings', handleGetSettings)

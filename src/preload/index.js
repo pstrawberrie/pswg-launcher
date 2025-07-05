@@ -7,6 +7,7 @@ const api = {
   selectInstallDir: (dir) => ipcRenderer.invoke('dialog:selectInstallDir', dir),
 
   // settings
+  getStatus: () => ipcRenderer.invoke('getStatus'),
   getSettings: () => ipcRenderer.invoke('getSettings'),
   setMinimizeToTray: (isChecked) => ipcRenderer.send('setMinimizeToTray', isChecked),
   setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked),
@@ -14,6 +15,7 @@ const api = {
   setServer: (server) => ipcRenderer.send('setServer', server),
 
   // events
+  onStatusEvent: (callback) => ipcRenderer.on('status', (_event, value) => callback(value)),
   onSettingsEvent: (callback) => ipcRenderer.on('settings', (_event, value) => callback(value)),
   onTaskEvent: (callback) => ipcRenderer.on('task', (_event, value) => callback(value))
 }
