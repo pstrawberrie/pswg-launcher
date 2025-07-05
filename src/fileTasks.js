@@ -2,6 +2,7 @@ import { join } from 'path'
 import { createReadStream, readdirSync, mkdirSync } from 'node:fs'
 import crypto from 'node:crypto'
 import { directoryList, fileList } from './files.js'
+import { errorMessages } from './strings.js'
 
 // Get Percent Complete Util
 function getPercentComplete(count, total) {
@@ -42,7 +43,7 @@ export const makeDirectories = (installDir, eventEmitter) =>
         if (created === totalDirs) resolve({ success: true })
       } catch (err) {
         console.error(`Error creating directory: ${dirPath}`, err)
-        eventEmitter({ makeDirectoriesError: true })
+        eventEmitter({ error: true, message: errorMessages.createDirs(dirPath) })
         reject(err)
       }
     }
@@ -69,6 +70,7 @@ export async function verifyFiles(installDir, eventEmitter) {
 
       await new Promise((resolve, reject) => {
         eventEmitter({
+          downloading: true,
           message: `Verifying ${file.filePath}...`,
           progress: getPercentComplete(processedCount, totalFiles)
         })
@@ -108,18 +110,18 @@ export async function verifyFiles(installDir, eventEmitter) {
             resolve()
           } else {
             console.error(`Error processing file: ${file.filePath}`, err)
-            eventEmitter({ fileVerificationError: true })
+            eventEmitter({ error: true, message: errorMessages.verify })
             reject(err)
           }
         })
       })
     } catch (err) {
       console.error(`Failed to verify file: ${file.filePath}`, err)
-      eventEmitter({ fileVerificationError: true })
+      eventEmitter({ error: true, downloading: false, message: errorMessages.verify })
     }
 
     if (processedCount === totalFiles) {
-      eventEmitter({ success: true })
+      eventEmitter({ success: true, downloading: false })
       return { totalFiles, verifiedFiles, missingFiles, badHashFiles }
     }
   }
@@ -134,6 +136,8 @@ export async function downloadFiles(files, installDir, session, eventEmitter) {
   const failedDownloads = []
 
   let completedCount = 0
+
+  eventEmitter({ downloading: true })
 
   for (const file of filesToDownload) {
     await new Promise((res) => {
@@ -193,9 +197,9 @@ export async function downloadFiles(files, installDir, session, eventEmitter) {
 
   const success = failedDownloads.length === 0
   if (success) {
-    eventEmitter({ success })
+    eventEmitter({ success, downloading: false })
   } else {
-    eventEmitter({ fileDownloadError: true })
+    eventEmitter({ error: true, downloading: false, message: errorMessages.download })
   }
 
   return {
@@ -205,16 +209,3 @@ export async function downloadFiles(files, installDir, session, eventEmitter) {
     failedDownloads
   }
 }
-
-// TESTING
-// async function run() {
-//   // await makeDirectories('E:/pSWG_test')
-//   const result = await verifyFiles('E:/pSWG_test')
-//   console.log('----------------')
-//   console.log(`Verified Files: ${result.verifiedFiles.length}/${result.totalFiles}`)
-//   console.log(`Bad Hash Files: ${result.badHashFiles.length}/${result.totalFiles}`)
-//   console.log(`Missing Files: ${result.missingFiles.length}/${result.totalFiles}`)
-//   console.log(`fileList total files: ${fileList.length}`)
-// }
-
-// run()

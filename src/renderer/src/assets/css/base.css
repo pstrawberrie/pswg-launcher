@@ -47,6 +47,10 @@ body {
   overflow-x: hidden;
 }
 
+body.fixed {
+  overflow: hidden;
+}
+
 /* Util */
 .success {
   color: var(--c-green);

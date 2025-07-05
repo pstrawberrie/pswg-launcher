@@ -18,3 +18,13 @@ export const dialogMessages = {
   confirmFileRepair: (dir, numFiles) =>
     `${numFiles} invalid files found in ${dir} - do you want to download new copies? This may break your client mods. Cancel and install the pSWG client in a new empty folder if you're unsure.`
 }
+
+const errorPrepend = 'Error: '
+const errorAppend = ' - please re-select your client folder'
+export const errorMessages = {
+  general: `${errorPrepend}something went wrong${errorAppend}`,
+  createDirs: (dir) => `${errorPrepend}could not create directories in ${dir}${errorAppend}`,
+  installDir: (dir) => `${errorPrepend}folder ${dir} does not exist${errorAppend}`,
+  download: `${errorPrepend}download failed${errorAppend}`,
+  verify: `${errorPrepend}file verification failed${errorAppend}`
+}

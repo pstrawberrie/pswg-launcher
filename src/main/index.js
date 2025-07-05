@@ -12,7 +12,7 @@ import {
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getSettings, writeSettings, setServer } from '../settings.js'
-import { taskMessages, dialogMessages } from '../strings.js'
+import { taskMessages, dialogMessages, errorMessages } from '../strings.js'
 import { isInstallDirEmpty, makeDirectories, verifyFiles, downloadFiles } from '../fileTasks.js'
 
 const settingsPath = `${app.getPath('userData')}/settings.json`
@@ -91,12 +91,6 @@ app.whenReady().then(() => {
 
   // Tray
   setupTray()
-
-  // Testing
-  // sendTaskEvent({ message: 'Testing task event', progress: 19 })
-  // sendTaskEvent({ fileVerificationError: true })
-  // sendTaskEvent({ fileDownloadError: true })
-  // sendTaskEvent({ ready: true })
 })
 
 /* Set Up Tray */
@@ -115,16 +109,24 @@ function setupTray() {
   })
 }
 
-/**
- * IPC Handlers
- */
-/* Handle Get Settings */
+/* Send Task Event */
+function sendTaskEvent(taskData) {
+  const win = BrowserWindow.getAllWindows()[0]
+
+  if (win) {
+    win.webContents.send('task', taskData)
+  } else {
+    console.error('no window found for sendTask!')
+  }
+}
+
+/* Get Settings */
 async function handleGetSettings() {
   const settings = await getSettings(settingsPath)
   return settings
 }
 
-/* Handle Send Settings */
+/* Send Settings */
 async function sendSettings() {
   const win = BrowserWindow.getAllWindows()[0]
   const settings = await getSettings(settingsPath)
@@ -137,6 +139,17 @@ async function sendSettings() {
   }
 }
 
+/* Handle Errors */
+async function handleError(message) {
+  const settings = await getSettings(settingsPath)
+  await writeSettings(settingsPath, { ...settings, installDir: '' })
+  await sendSettings()
+  sendTaskEvent({ error: true, message })
+}
+
+/**
+ * IPC Handlers
+ */
 /* Handle Select Install Dir */
 // - this is coming from renderer initially
 // - after the user selects install dir, the main process handles the rest!
@@ -151,7 +164,6 @@ async function handleSelectInstallDir() {
 
     // if selected dir is same as install dir, skip to verification
     if (selectedDir === installDir) {
-      //@TODO: skip to verification here
       console.log(
         'selected install dir is the same as the current install dir - skipping to verification step'
       )
@@ -162,7 +174,7 @@ async function handleSelectInstallDir() {
     const isEmpty = await isInstallDirEmpty(selectedDir)
     if (isEmpty) {
       // if the dir is empty, display confirmation to install in empty dir
-      const canInstall = await confirmEmptyDirInstall(selectedDir)
+      const canInstall = await confirmEmptyDirInstallDialog(selectedDir)
       if (canInstall === 0) {
         console.log('CAN INSTALL IN EMPTY DIR - GOOD JOB!')
         installDir = selectedDir
@@ -173,7 +185,7 @@ async function handleSelectInstallDir() {
       }
     } else {
       // if the dir already exists, display dialog confirmation to install in existing dir
-      const canInstall = await confirmExistingDirInstall(selectedDir)
+      const canInstall = await confirmExistingDirInstallDialog(selectedDir)
       if (canInstall === 0) {
         console.log('CAN INSTALL IN EXISTING DIR - GOOD JOB!')
         installDir = selectedDir
@@ -192,7 +204,7 @@ async function handleSelectInstallDir() {
 }
 
 /* Confirm Empty Dir Install (main process only) */
-async function confirmEmptyDirInstall(dir) {
+async function confirmEmptyDirInstallDialog(dir) {
   const { response } = await dialog.showMessageBox({
     title: dialogMessages.confirmEmptyInstallDir_title,
     message: dialogMessages.confirmEmptyInstallDir(dir),
@@ -206,7 +218,7 @@ async function confirmEmptyDirInstall(dir) {
 }
 
 /* Confirm Existing Dir Install (main process only) */
-async function confirmExistingDirInstall(dir) {
+async function confirmExistingDirInstallDialog(dir) {
   const { response } = await dialog.showMessageBox({
     title: dialogMessages.confirmExistingInstallDir_title,
     message: dialogMessages.confirmExistingInstallDir(dir),
@@ -220,7 +232,7 @@ async function confirmExistingDirInstall(dir) {
 }
 
 /* Confirm Repair (main process only) */
-async function confirmRepair(dir, numFiles) {
+async function confirmRepairDialog(dir, numFiles) {
   const { response } = await dialog.showMessageBox({
     title: dialogMessages.confirmFileRepair_title,
     message: dialogMessages.confirmFileRepair(dir, numFiles),
@@ -233,17 +245,6 @@ async function confirmRepair(dir, numFiles) {
   return response
 }
 
-/* Send Task Event */
-function sendTaskEvent(taskData) {
-  const win = BrowserWindow.getAllWindows()[0]
-
-  if (win) {
-    win.webContents.send('task', taskData)
-  } else {
-    console.error('no window found for sendTask!')
-  }
-}
-
 /* Verify Client */
 function handleVerifyClientIPC() {
   ipcMain.on('verifyClient', async () => {
@@ -253,12 +254,13 @@ function handleVerifyClientIPC() {
 
     if (!win) {
       console.error('window not found in handleVerifyClientIPC')
-      sendTaskEvent({ fileVerificationError: true })
+      await handleError(errorMessages.general)
     }
 
     // Do File Downloads
     async function doDownloadFiles(filesToDownload) {
       console.log('starting file downloads...')
+
       const downloadResult = await downloadFiles(
         filesToDownload,
         installDir,
@@ -274,6 +276,7 @@ function handleVerifyClientIPC() {
         // download(s) failed, handle errors
         console.log('DOWNLAOAD TASK FAILED - handle error here')
         console.log(downloadResult)
+        await handleError(errorMessages.download)
       }
     }
 
@@ -302,7 +305,7 @@ function handleVerifyClientIPC() {
         // ask user if they want to repair files
         console.log('user needs to repair files - opening repair dialog')
 
-        const canRepair = await confirmRepair(installDir, filesToRepair.length)
+        const canRepair = await confirmRepairDialog(installDir, filesToRepair.length)
         if (canRepair === 0) {
           console.log('CAN REPAIR!')
           await doDownloadFiles(filesToRepair)
@@ -338,13 +341,12 @@ function handleVerifyClientIPC() {
       }
     } catch (err) {
       if (err.code === 'ENOENT') {
-        sendTaskEvent({
-          message: `Error: folder ${installDir} does not exist - choose a new client folder`
-        })
+        handleError(errorMessages.installDir(installDir))
         await writeSettings(settingsPath, { ...settings, installDir: '' })
         await sendSettings()
       } else {
         console.error('Error in handleVerifyClientIPC', err)
+        await handleError(errorMessages.verify)
       }
     }
   })
@@ -392,7 +394,6 @@ function setServerIPC() {
   ipcMain.on('setServer', async (event, server) => {
     const settings = await getSettings(settingsPath)
 
-    console.log(`setServer: ${server}`) //REMOVE
     await writeSettings(settingsPath, { ...settings, server })
     await setServer(settings.installDir, server)
   })

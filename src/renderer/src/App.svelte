@@ -6,10 +6,12 @@
 
   // Elements
   let settingsButtonEl
+  let infoButtonEl
   let videoEl = $state()
 
   // Settings state
   let isSettingsOpen = $state(false)
+  let isInfoOpen = $state(false)
 
   let installDir = $state('')
   let minimizeToTray = $state(true)
@@ -23,16 +25,11 @@
   let taskError = $state(false)
 
   // Play state
+  let downloading = $state(false)
   let readyToPlay = $state(false)
-  let makeDirectoriesError = $state(false)
-  let fileVerificationError = $state(false)
-  let fileDownloadError = $state(false)
   let noInstallDir = $derived(installDir === '')
 
   function clearErrors() {
-    makeDirectoriesError = false
-    fileVerificationError = false
-    fileDownloadError = false
     taskError = false
   }
 
@@ -41,6 +38,7 @@
     taskMessage = taskMessages.readyToPlay
     taskProgress = 100
     readyToPlay = true
+    downloading = false
   }
 
   function removeReadyToPlay() {
@@ -86,7 +84,7 @@
   }
 
   function handleGetSettings(settings) {
-    console.log(settings)
+    console.log('handleGetSettings: ', settings)
 
     installDir = settings.installDir
     minimizeToTray = settings.minimizeToTray
@@ -97,31 +95,17 @@
 
   function handleTaskEvent(taskData) {
     // console.log(taskData)
-    if (taskData.ready) {
+    if (taskData?.ready) {
       setReadyToPlay()
     } else {
       removeReadyToPlay()
     }
 
-    if (taskData.makeDirectoriesError) {
-      makeDirectoriesError = true
-      taskError = true
-      taskMessage = taskMessages.makeDirectoriesError
-      taskProgress = 100
-    } else if (taskData.fileDownloadError) {
-      fileDownloadError = true
-      taskError = true
-      taskMessage = taskMessages.fileDownloadError
-      taskProgress = 100
-    } else if (taskData.fileVerificationError) {
-      fileVerificationError = true
-      taskError = true
-      taskMessage = taskMessages.fileVerificationError
-      taskProgress = 100
-    } else {
-      if (taskData.message) taskMessage = taskData.message
-      if (taskData.progress) taskProgress = taskData.progress
-    }
+    if (taskData?.message) taskMessage = taskData.message
+    if (taskData?.progress) taskProgress = taskData.progress
+    if (taskData?.success || (taskData?.progress && taskData?.progress > 0)) taskError = false
+    if (taskData?.downloading) downloading = taskData?.downloading
+    if (taskData?.error) taskError = true
   }
 
   // On Mount
@@ -144,13 +128,17 @@
 
 <svelte:document
   onkeydown={(e) => {
-    if (e.key === 'Escape' && isSettingsOpen) {
-      isSettingsOpen = false
+    if (e.key === 'Escape') {
+      if (isSettingsOpen) isSettingsOpen = false
+      if (isInfoOpen) isInfoOpen = false
     }
   }}
   onclick={(e) => {
     if (isSettingsOpen && e.target !== settingsButtonEl && !e.target.closest('.settings')) {
       isSettingsOpen = false
+    }
+    if (isInfoOpen && e.target !== infoButtonEl && !e.target.closest('.info')) {
+      isInfoOpen = false
     }
   }}
   onvisibilitychange={() => {
@@ -169,8 +157,14 @@
 </div>
 
 <button
+  class="open-info"
+  aria-label="open info"
+  onclick={() => (isInfoOpen = !isInfoOpen)}
+  bind:this={infoButtonEl}><span class="i i-info-large"></span></button
+>
+<button
   class="open-settings"
-  aria-label="settings"
+  aria-label="open settings"
   bind:this={settingsButtonEl}
   onclick={() => {
     isSettingsOpen = !isSettingsOpen
@@ -232,21 +226,45 @@
     <button class="action select-install-dir" onclick={ipcSelectInstallDir}>
       <i class="i-folder"></i> Select Client Folder
       <span>If an empty folder is selected, all client files will be downloaded</span>
-      <span>The Recommended install location is in a new folder inside of your "Documents"</span>
+      <span>The Recommended fresh install location is in a new folder inside of "Documents"</span>
+      <span>You can copy *.tre files to a fresh install directory to speed things up</span>
     </button>
   {/if}
   {#if !noInstallDir}
-    <button class="action play" disabled={!readyToPlay} onclick={ipcPlay}>play</button>
+    <button class="action play" disabled={!readyToPlay || downloading} onclick={ipcPlay}
+      >play</button
+    >
   {/if}
 </div>
 
 <div class={['bottom-menu', noInstallDir ? 'hide-button' : '']}>
-  <button class="install-dir" onclick={ipcSelectInstallDir}
+  <button class="install-dir" onclick={ipcSelectInstallDir} disabled={downloading}
     ><span class="i i-folder"></span>{noInstallDir ? 'Select Client Folder' : installDir}</button
   >
   <div class={['task', taskError ? 'error' : '', readyToPlay ? 'ready' : '']}>
     <div class="message">{taskMessage}</div>
-    <div class="progress"><div class="bar" style={`width:${taskProgress}%;`}></div></div>
+    <div class="progress">
+      <div class="bar" style={`width:${taskProgress}%;`} data-progress={taskProgress}></div>
+    </div>
+  </div>
+</div>
+
+<div class={['info', isInfoOpen ? 'open' : '']}>
+  <div class="title">Launcher Info</div>
+  <div class="list">
+    <ul class="issues">
+      <span>Notes</span>
+      <li>Change your current install directory by clicking the button on the bottom left</li>
+      <li>Provided SWGEmu.exe is set to 144fps max</li>
+    </ul>
+    <div class="about">
+      Built with electron<br /><i class="i i-heart-outline"></i> Have a good day!
+    </div>
+    <div>
+      <a href="https://github.com/pstrawberrie/pswg-launcher" target="_blank"
+        >Launcher Github Repo</a
+      >
+    </div>
   </div>
 </div>
 

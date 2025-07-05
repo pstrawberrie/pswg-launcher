@@ -43,8 +43,6 @@ export function writeSettings(settingsPath, json) {
 export async function setServer(installDir, serverChoice) {
   let server = 'swg.pstraw.net'
 
-  console.log(`setting server in dir ${installDir} to ${serverChoice}`) //REMOVE
-
   switch (serverChoice) {
     case 'local':
       server = '172.23.219.155'
