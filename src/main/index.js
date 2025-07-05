@@ -105,6 +105,11 @@ function setupTray() {
   tray.setContextMenu(trayMenu)
   tray.on('click', () => {
     const win = BrowserWindow.getAllWindows()[0]
+
+    // workaround for getting window to come to the front of other applications
+    win.setAlwaysOnTop(true)
+    win.setAlwaysOnTop(false)
+
     win.isVisible() ? win.focus() : win.show()
   })
 }
