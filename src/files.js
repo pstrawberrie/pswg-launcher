@@ -7,7 +7,7 @@ export const directoryList = [
 ]
 
 export const fileList = [
-  { filePath: 'pswg.tre', fileHash: '222a1a93c78afddbc48f79b3ad28c688' },
+  { filePath: 'pswg.tre', fileHash: '7c9dd0b6a56a1d21a6bafe64e86dac98' },
   { filePath: 'default_patch.tre', fileHash: '907194cd54efd6820c84db37c47dfe2d' },
   { filePath: 'patch_sku1_14_00.tre', fileHash: '3170521a8e7e0547e9117bc092cbd021' },
   { filePath: 'patch_14_00.tre', fileHash: '0649bd5305dd18cd5378cf542647e543' },
