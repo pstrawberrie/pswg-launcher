@@ -50,6 +50,10 @@ a {
   backdrop-filter: blur(5px);
 }
 
+.status .name {
+  text-transform: capitalize;
+}
+
 .status span:first-child {
   position: relative;
   display: inline-block;

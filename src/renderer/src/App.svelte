@@ -1,5 +1,6 @@
 <script>
   // import Versions from './components/Versions.svelte'
+  import { formatSecondsToReadableTime } from '../../util'
   import { taskMessages } from '../../strings.js'
   import Logo from './assets/images/logo.png'
   import bgVideo from './assets/images/bg.mp4'
@@ -92,8 +93,8 @@
   function handleGetStatus(status) {
     // console.log('handleGetStatus: ', status)
 
-    statusOnline = status.online
-    statusPlayers = status.players
+    statusOnline = status.status === 'up'
+    statusPlayers = status.users.connected
     statusUptime = status.uptime
   }
 
@@ -169,13 +170,16 @@
 />
 
 <div class={['status', statusOnline ? '' : 'error']}>
-  <div>
-    <span class="i i-power-outline success"></span> Server Status: {statusOnline
-      ? 'online'
-      : 'offline'}
+  <div class="name">
+    <span class="i i-power-outline success"></span>
+    {serverChoice} Server: {statusOnline ? 'online' : 'offline'}
   </div>
   <div><span class="i i-group blue"></span> {statusPlayers} Characters Logged In</div>
-  <div><span class="i i-chart-line yellow"></span> Server Uptime: {statusUptime}</div>
+  <div>
+    <span class="i i-chart-line yellow"></span> Server Uptime: {formatSecondsToReadableTime(
+      statusUptime
+    )}
+  </div>
 </div>
 
 <button

@@ -14,6 +14,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getSettings, writeSettings, setServer } from '../settings.js'
 import { taskMessages, dialogMessages, errorMessages } from '../strings.js'
 import { isInstallDirEmpty, makeDirectories, verifyFiles, downloadFiles } from '../fileTasks.js'
+import { timeStamp } from 'console'
 
 const settingsPath = `${app.getPath('userData')}/settings.json`
 
@@ -48,7 +49,7 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Minimize to system tray
+  // On Minimize
   mainWindow.on('minimize', async (event) => {
     event.preventDefault()
     const settings = await getSettings(settingsPath)
@@ -56,6 +57,11 @@ function createWindow() {
     if (settings.minimizeToTray) {
       mainWindow.hide()
     }
+  })
+
+  // On Resore
+  mainWindow.on('restore', async () => {
+    fetchStatusInterval()
   })
 }
 
@@ -93,7 +99,7 @@ app.whenReady().then(() => {
   // Tray
   setupTray()
 
-  // Send Status
+  // Poll Server Status
   setInterval(fetchStatusInterval, 60000)
 })
 
@@ -120,8 +126,25 @@ function setupTray() {
 
 /* Get status from URL */
 async function fetchStatus() {
-  const statusURL = 'https://swg.pstraw.net/status'
-  const offlineStatusObj = { online: false, players: 0, uptime: 0 }
+  const settings = await getSettings(settingsPath)
+
+  const statusURL = settings.server.toLowerCase().includes('local')
+    ? 'http://localhost/status'
+    : 'https://swg.pstraw.net/status'
+
+  const offlineStatusObj = {
+    name: 'pSWG',
+    status: 'down',
+    users: {
+      connected: 0,
+      cap: 3000,
+      max: 0,
+      total: 0,
+      deleted: 0
+    },
+    uptime: 0,
+    timeStamp: 0
+  }
 
   try {
     const response = await fetch(statusURL)
@@ -140,8 +163,19 @@ async function fetchStatus() {
 
 /* Fetch Status Interval (send ever x seconds) */
 async function fetchStatusInterval() {
-  const status = await fetchStatus()
-  sendStatusEvent(status)
+  try {
+    const win = BrowserWindow.getAllWindows()[0]
+
+    if (win && win.isVisible() && win.isFocused()) {
+      console.log('polling status') //REMOVE
+      const status = await fetchStatus()
+      sendStatusEvent(status)
+    } else {
+      console.log('Window not visible - skipping poll') //REMOVE
+    }
+  } catch (err) {
+    console.error('Error in fetchStatusInterval: ', err)
+  }
 }
 
 /* Send Status Event */
@@ -446,13 +480,15 @@ function setDisableVideoIPC() {
   })
 }
 
-// Set Disable Verification IPC
+// Set Server IPC
 function setServerIPC() {
   ipcMain.on('setServer', async (event, server) => {
     const settings = await getSettings(settingsPath)
 
     await writeSettings(settingsPath, { ...settings, server })
     await setServer(settings.installDir, server)
+    await sendSettings()
+    fetchStatusInterval()
   })
 }
 
