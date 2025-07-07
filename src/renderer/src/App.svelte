@@ -24,6 +24,7 @@
   let minimizeOnPlay = $state(true)
   let disableVideo = $state(false)
   let serverChoice = $state('live')
+  let fpsChoice = $state('60')
 
   // Task state
   let taskMessage = $state(taskMessages.starting)
@@ -66,6 +67,7 @@
   const ipcSetMinimizeOnPlay = async (isChecked) => await window.api.setMinimizeOnPlay(isChecked)
   const ipcSetDisableVideo = async (isChecked) => await window.api.setDisableVideo(isChecked)
   const ipcSetServer = async (serverChoice) => await window.api.setServer(serverChoice)
+  const ipcSetFPS = async (fpsChoice) => await window.api.setFPS(fpsChoice)
 
   const ipcVerifyClient = () => window.electron.ipcRenderer.send('verifyClient')
   const ipcSWGSettings = () => window.electron.ipcRenderer.send('SWGSettings')
@@ -90,6 +92,10 @@
     ipcSetServer(e.target.value)
   }
 
+  function onFPSChange(e) {
+    ipcSetFPS(e.target.value)
+  }
+
   function handleGetStatus(status) {
     // console.log('handleGetStatus: ', status)
 
@@ -106,6 +112,7 @@
     minimizeOnPlay = settings.minimizeOnPlay
     disableVideo = settings.disableVideo
     serverChoice = settings.server
+    fpsChoice = settings.fps
   }
 
   function handleTaskEvent(taskData) {
@@ -210,6 +217,14 @@
           <option value="local">Local Development</option>
         </select>
       </div>
+
+      <div>
+        <label for="fpsChoice">Client FPS</label>
+        <select onchange={onFPSChange} value={fpsChoice}>
+          <option value="60">60 FPS</option>
+          <option value="120">120 FPS</option>
+        </select>
+      </div>
     </div>
   {/if}
   <div class="bottom">
@@ -280,11 +295,12 @@
   <div class="list">
     <ul class="issues">
       <span>Notes</span>
-      <li>Change your current install directory by clicking the button on the bottom left</li>
-      <li>Provided SWGEmu.exe is set to 144fps max</li>
+      <li>V1 Release July 7, 2025</li>
+      <li>Known issue: max zoom distance forced to 6</li>
     </ul>
     <div class="about">
-      Built with electron<br /><i class="i i-heart-outline"></i> Have a good day!
+      If you find any issues please report them on github. Have fun!<br />
+      <i class="i i-heart-outline"></i> pstraw
     </div>
     <div>
       <a href="https://github.com/pstrawberrie/pswg-launcher" target="_blank"

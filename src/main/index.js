@@ -61,7 +61,8 @@ function createWindow() {
 
   // On Resore
   mainWindow.on('restore', async () => {
-    fetchStatusInterval()
+    const status = await fetchStatus()
+    sendStatusEvent(status)
   })
 }
 
@@ -88,6 +89,7 @@ app.whenReady().then(() => {
   setMinimizeOnPlayIPC()
   setDisableVideoIPC()
   setServerIPC()
+  setFPSIPC()
 
   SWGSettingsIPC()
   clientFolderIPC()
@@ -492,6 +494,14 @@ function setServerIPC() {
   })
 }
 
+// Set FPS IPC
+function setFPSIPC() {
+  ipcMain.on('setFPS', async (event, fps) => {
+    const settings = await getSettings(settingsPath)
+    await writeSettings(settingsPath, { ...settings, fps })
+  })
+}
+
 // SWG Settings IPC
 function SWGSettingsIPC() {
   ipcMain.on('SWGSettings', async () => {
@@ -523,7 +533,9 @@ function playGameIPC() {
     const win = BrowserWindow.getAllWindows()[0]
 
     if (win) {
-      shell.openPath(join(settings.installDir, 'SWGEmu.exe'))
+      shell.openPath(
+        join(settings.installDir, settings.fps === '60' ? 'SWGEmu.exe' : 'SWGEmu_120fps.exe')
+      )
       if (settings.minimizeOnPlay) win.minimize()
     }
   })

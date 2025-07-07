@@ -13,6 +13,7 @@ const api = {
   setMinimizeOnPlay: (isChecked) => ipcRenderer.send('setMinimizeOnPlay', isChecked),
   setDisableVideo: (isChecked) => ipcRenderer.send('setDisableVideo', isChecked),
   setServer: (server) => ipcRenderer.send('setServer', server),
+  setFPS: (server) => ipcRenderer.send('setFPS', server),
 
   // events
   onStatusEvent: (callback) => ipcRenderer.on('status', (_event, value) => callback(value)),

@@ -5,10 +5,10 @@ import { readFileSync, writeFileSync } from 'node:fs'
 const defaultSettings = {
   installDir: '',
   server: 'live',
+  fps: '60',
   minimizeToTray: true,
-  minimizeOnPlay: true,
-  disableVideo: false,
-  disableVerification: false
+  minimizeOnPlay: false,
+  disableVideo: false
 }
 
 export function getSettings(settingsPath) {
